@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⚽ 自主練チャレンジ！</title>
-  <meta name="description" content="みんなで自主練を記録して応援し合おう！">
-  <!-- Tailwind CSS (デザイン用) -->
+  <title>⚽ 自主練＆チーム予定表</title>
+  <meta name="description" content="みんなで自主練を記録して応援し合おう！チームの予定・出欠確認もできるよ！">
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <!-- Google Fonts (丸みのある親しみやすいフォント) -->
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'M PLUS Rounded 1c', sans-serif;
-      background-color: #f0fdf4; /* 芝生をイメージした優しい薄緑 */
+      background-color: #f0fdf4;
       -webkit-tap-highlight-color: transparent;
     }
     .pitch-gradient {
@@ -35,10 +35,13 @@
 <body class="text-slate-800 pb-24">
 
   <!-- ==========================================
-       ⚙️ 設定エリア（本番キー設定済み）
+       ⚙️ 設定エリア（本番キー＆管理者パスコード）
        ========================================== -->
   <script>
     const MY_LIFF_ID = "2012781434-uVaVDF3P";
+
+    // 🔒 管理者用パスコード（日程の追加・編集・削除ができる合言葉。好きな数字に変えてください）
+    const ADMIN_PASSCODE = "1234";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCcFTjeCn13api7dx7kz7nkz2ghTYU3x_s",
@@ -106,7 +109,6 @@
         </button>
       </div>
 
-      <!-- タイムライン一覧コンテナ -->
       <div id="timelineList" class="space-y-3">
         <div class="text-center py-10 text-slate-400 text-sm">
           読み込み中... ⚽
@@ -123,7 +125,7 @@
           ⚽ 今日の自主練を記録しよう！
         </h2>
 
-        <!-- 練習メニュー選択（複数選択可） -->
+        <!-- 練習メニュー選択 -->
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">1. どんな練習をした？（いくつでもOK）</label>
           <div class="grid grid-cols-2 gap-2" id="menuCheckboxes">
@@ -161,7 +163,7 @@
           </div>
         </div>
 
-        <!-- リフティング最高回数（任意） -->
+        <!-- リフティング最高回数 -->
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-1">3. 今日のリフティング最高回数（任意）</label>
           <div class="relative">
@@ -184,7 +186,41 @@
     </section>
 
     <!-- ==========================================
-         タブ3：チーム内ランキング
+         タブ3：チーム予定＆出欠確認
+         ========================================== -->
+    <section id="tab-schedule" class="hidden fade-in space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-extrabold text-lg text-slate-700 flex items-center">
+          <span class="mr-1.5">📅</span> チームの予定・出欠
+        </h2>
+        <div class="flex items-center space-x-2">
+          <!-- 管理者専用：予定追加ボタン（パスコード認証済みなら表示） -->
+          <button id="addScheduleBtn" onclick="openScheduleModal()" class="hidden text-xs bg-green-600 text-white font-bold px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition">
+            ＋ 予定追加
+          </button>
+          <!-- 管理者モード切替ボタン -->
+          <button id="adminToggleBtn" onclick="toggleAdminMode()" class="text-xs bg-slate-200 text-slate-600 font-bold px-2.5 py-1.5 rounded-full active:scale-95 transition">
+            🔒 管理者
+          </button>
+        </div>
+      </div>
+
+      <!-- 管理者モード中の案内バナー -->
+      <div id="adminBanner" class="hidden bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold px-3.5 py-2.5 rounded-2xl flex items-center justify-between">
+        <span>🔓 管理者モード中（予定の作成・編集・削除が可能）</span>
+        <button onclick="logoutAdmin()" class="text-blue-600 underline ml-2">解除</button>
+      </div>
+
+      <!-- 予定一覧コンテナ -->
+      <div id="scheduleList" class="space-y-3">
+        <div class="text-center py-10 text-slate-400 text-sm">
+          予定を読み込み中... 📅
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         タブ4：チーム内ランキング
          ========================================== -->
     <section id="tab-ranking" class="hidden fade-in space-y-4">
       <div class="bg-white rounded-3xl p-5 card-shadow">
@@ -194,29 +230,33 @@
         <p class="text-xs text-center text-slate-400 mb-4">コツコツ練習してレベルアップしよう！</p>
         
         <div id="rankingList" class="space-y-2.5">
-          <!-- ランキングアイテムがここに入ります -->
+          <!-- ランキングアイテム -->
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- 下部ナビゲーションバー -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 z-30">
-    <div class="max-w-md mx-auto grid grid-cols-3 gap-1">
+  <!-- 下部ナビゲーションバー（4タブ構成） -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-30">
+    <div class="max-w-md mx-auto grid grid-cols-4 gap-1">
       <button onclick="switchTab('timeline')" id="nav-timeline" class="nav-btn flex flex-col items-center py-1 text-green-600 font-extrabold">
         <span class="text-xl">📋</span>
-        <span class="text-[11px] mt-0.5">みんなの記録</span>
+        <span class="text-[10px] mt-0.5">みんなの記録</span>
       </button>
       <button onclick="switchTab('record')" id="nav-record" class="nav-btn flex flex-col items-center py-1 text-slate-400 font-bold">
-        <div class="bg-green-600 text-white w-11 h-11 rounded-full flex items-center justify-center -mt-5 shadow-md border-4 border-white text-xl">
+        <div class="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center -mt-4 shadow-md border-4 border-white text-lg">
           ➕
         </div>
-        <span class="text-[11px] mt-0.5 text-green-700 font-extrabold">記録する</span>
+        <span class="text-[10px] mt-0.5 text-green-700 font-extrabold">記録する</span>
+      </button>
+      <button onclick="switchTab('schedule')" id="nav-schedule" class="nav-btn flex flex-col items-center py-1 text-slate-400 font-bold">
+        <span class="text-xl">📅</span>
+        <span class="text-[10px] mt-0.5">予定・出欠</span>
       </button>
       <button onclick="switchTab('ranking')" id="nav-ranking" class="nav-btn flex flex-col items-center py-1 text-slate-400 font-bold">
         <span class="text-xl">🏆</span>
-        <span class="text-[11px] mt-0.5">ランキング</span>
+        <span class="text-[10px] mt-0.5">ランキング</span>
       </button>
     </div>
   </nav>
@@ -247,6 +287,62 @@
     </div>
   </div>
 
+  <!-- 🔒 管理者パスコード認証モーダル -->
+  <div id="adminAuthModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-xl">
+      <h3 class="font-extrabold text-lg text-slate-800">🔒 管理者パスコード入力</h3>
+      <p class="text-xs text-slate-500">日程の作成・編集・削除を行うには、管理者パスコードを入力してください。</p>
+      <input type="password" inputmode="numeric" id="adminPassInput" placeholder="パスコードを入力" class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 font-bold text-center text-lg tracking-widest focus:border-green-500 focus:outline-none">
+      <div class="flex space-x-2 pt-2">
+        <button onclick="closeAdminAuthModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">キャンセル</button>
+        <button onclick="verifyAdminPasscode()" class="flex-1 pitch-gradient text-white font-bold py-3 rounded-xl">認証する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📅 管理者用：予定作成・編集モーダル -->
+  <div id="scheduleModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-3.5 shadow-xl my-8">
+      <h3 id="scheduleModalTitle" class="font-extrabold text-lg text-slate-800">📅 新しい予定を追加</h3>
+      <input type="hidden" id="editScheduleId" value="">
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">種別</label>
+        <select id="schedType" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:border-green-500 focus:outline-none">
+          <option value="練習">⚽ 練習</option>
+          <option value="練習試合">🔥 練習試合</option>
+          <option value="公式戦・大会">🏆 公式戦・大会</option>
+          <option value="イベント・その他">🎉 イベント・その他</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">日付（必須）</label>
+        <input type="date" id="schedDate" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:border-green-500 focus:outline-none">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">時間・集合時間</label>
+        <input type="text" id="schedTime" placeholder="例：9:00〜12:00（8:45集合）" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:border-green-500 focus:outline-none">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">場所・グラウンド</label>
+        <input type="text" id="schedPlace" placeholder="例：〇〇小学校 校庭" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:border-green-500 focus:outline-none">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">持ち物・連絡メモ</label>
+        <textarea id="schedNote" rows="2" placeholder="例：水筒、すね当て、青ユニフォーム" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-green-500 focus:outline-none"></textarea>
+      </div>
+
+      <div class="flex space-x-2 pt-2">
+        <button onclick="closeScheduleModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">キャンセル</button>
+        <button id="saveScheduleBtn" onclick="saveSchedule()" class="flex-1 pitch-gradient text-white font-bold py-3 rounded-xl">保存する</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 通知トースト -->
   <div id="toast" class="hidden fixed top-24 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-sm font-bold px-5 py-3 rounded-full shadow-lg z-50 transition-opacity whitespace-nowrap">
     メッセージ
@@ -259,6 +355,8 @@
   <script>
     let db = null;
     let deleteTargetId = null;
+    let isAdmin = localStorage.getItem('soccer_is_admin') === 'true';
+    let cachedSchedules = [];
 
     let localBrowserId = localStorage.getItem('soccer_browser_uid');
     if (!localBrowserId) {
@@ -275,6 +373,16 @@
 
     let selectedMenus = [];
     let selectedMinutes = 30;
+
+    // 画像URLの安全性チェック（XSS対策）
+    function sanitizeImageUrl(url) {
+      const fallback = 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=soccer';
+      if (!url || typeof url !== 'string') return fallback;
+      if (url.startsWith('https://profile.line-scdn.net/') || url.startsWith('https://api.dicebear.com/')) {
+        return escapeHtml(url);
+      }
+      return fallback;
+    }
 
     window.onload = async function() {
       try {
@@ -293,7 +401,7 @@
           currentUser.userId = profile.userId;
           currentUser.displayName = profile.displayName;
           if (profile.pictureUrl) {
-            currentUser.pictureUrl = profile.pictureUrl;
+            currentUser.pictureUrl = sanitizeImageUrl(profile.pictureUrl);
           }
         } else if (liff.isInClient()) {
           liff.login();
@@ -306,6 +414,7 @@
         currentUser.playerName = currentUser.displayName;
       }
       updateUserHeader();
+      updateAdminUI();
 
       if (!localStorage.getItem('soccer_player_name')) {
         openNameModal();
@@ -325,7 +434,7 @@
 
     function updateUserHeader() {
       document.getElementById('playerNameDisplay').textContent = currentUser.playerName;
-      document.getElementById('userAvatar').src = currentUser.pictureUrl;
+      document.getElementById('userAvatar').src = sanitizeImageUrl(currentUser.pictureUrl);
     }
 
     function updateLevelDisplay(totalMinutes) {
@@ -347,6 +456,7 @@
       document.getElementById('nextLevelText').textContent = `あと ${nextMinutes}分！`;
     }
 
+    // 選手名変更モーダル
     function openNameModal() {
       document.getElementById('playerNameInput').value = localStorage.getItem('soccer_player_name') || '';
       document.getElementById('nameModal').classList.remove('hidden');
@@ -366,8 +476,305 @@
       closeNameModal();
       showToast(`「${val}」で登録しました！`);
       loadTimeline();
+      if (!document.getElementById('tab-schedule').classList.contains('hidden')) {
+        loadSchedules();
+      }
     }
 
+    // ==========================================
+    // 🔒 管理者モード制御（日程の編集・削除制限）
+    // ==========================================
+    function updateAdminUI() {
+      const addBtn = document.getElementById('addScheduleBtn');
+      const toggleBtn = document.getElementById('adminToggleBtn');
+      const banner = document.getElementById('adminBanner');
+
+      if (isAdmin) {
+        addBtn.classList.remove('hidden');
+        toggleBtn.classList.add('hidden');
+        banner.classList.remove('hidden');
+      } else {
+        addBtn.classList.add('hidden');
+        toggleBtn.classList.remove('hidden');
+        banner.classList.add('hidden');
+      }
+    }
+
+    function toggleAdminMode() {
+      if (isAdmin) return;
+      document.getElementById('adminPassInput').value = '';
+      document.getElementById('adminAuthModal').classList.remove('hidden');
+    }
+
+    function closeAdminAuthModal() {
+      document.getElementById('adminAuthModal').classList.add('hidden');
+    }
+
+    function verifyAdminPasscode() {
+      const input = document.getElementById('adminPassInput').value.trim();
+      if (input === ADMIN_PASSCODE) {
+        isAdmin = true;
+        localStorage.setItem('soccer_is_admin', 'true');
+        closeAdminAuthModal();
+        updateAdminUI();
+        loadSchedules();
+        showToast("🔓 管理者モードになりました！");
+      } else {
+        showToast("❌ パスコードが違います");
+      }
+    }
+
+    function logoutAdmin() {
+      isAdmin = false;
+      localStorage.removeItem('soccer_is_admin');
+      updateAdminUI();
+      loadSchedules();
+      showToast("🔒 管理者モードを解除しました");
+    }
+
+    // ==========================================
+    // 📅 スケジュール＆出欠管理ロジック
+    // ==========================================
+    function openScheduleModal(scheduleId = null) {
+      if (!isAdmin) {
+        showToast("管理者のみ操作できます");
+        return;
+      }
+
+      if (scheduleId) {
+        const target = cachedSchedules.find(s => s.id === scheduleId);
+        if (!target) return;
+        document.getElementById('scheduleModalTitle').textContent = "✏️ 予定を編集する";
+        document.getElementById('editScheduleId').value = target.id;
+        document.getElementById('schedType').value = target.type || '練習';
+        document.getElementById('schedDate').value = target.date || '';
+        document.getElementById('schedTime').value = target.time || '';
+        document.getElementById('schedPlace').value = target.place || '';
+        document.getElementById('schedNote').value = target.note || '';
+      } else {
+        document.getElementById('scheduleModalTitle').textContent = "📅 新しい予定を追加";
+        document.getElementById('editScheduleId').value = '';
+        document.getElementById('schedType').value = '練習';
+        document.getElementById('schedDate').value = '';
+        document.getElementById('schedTime').value = '';
+        document.getElementById('schedPlace').value = '';
+        document.getElementById('schedNote').value = '';
+      }
+
+      document.getElementById('scheduleModal').classList.remove('hidden');
+    }
+
+    function closeScheduleModal() {
+      document.getElementById('scheduleModal').classList.add('hidden');
+    }
+
+    async function saveSchedule() {
+      if (!isAdmin) return;
+
+      const editId = document.getElementById('editScheduleId').value;
+      const type = document.getElementById('schedType').value;
+      const date = document.getElementById('schedDate').value;
+      const time = document.getElementById('schedTime').value.trim();
+      const place = document.getElementById('schedPlace').value.trim();
+      const note = document.getElementById('schedNote').value.trim();
+
+      if (!date) {
+        showToast("日付を選んでください！");
+        return;
+      }
+
+      const btn = document.getElementById('saveScheduleBtn');
+      btn.disabled = true;
+      btn.textContent = "保存中...";
+
+      try {
+        if (editId) {
+          await db.collection('schedules').doc(editId).update({
+            type, date, time, place, note,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast("✅ 予定を更新しました！");
+        } else {
+          await db.collection('schedules').add({
+            type, date, time, place, note,
+            attendance: {},
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast("🎉 新しい予定を追加しました！");
+        }
+        closeScheduleModal();
+        await loadSchedules();
+      } catch (e) {
+        console.error("予定保存エラー:", e);
+        showToast("保存に失敗しました");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "保存する";
+      }
+    }
+
+    async function deleteSchedule(scheduleId) {
+      if (!isAdmin) return;
+      if (!confirm("この予定を削除してもよろしいですか？（出欠データも消えます）")) return;
+
+      try {
+        await db.collection('schedules').doc(scheduleId).delete();
+        showToast("🗑️ 予定を削除しました");
+        await loadSchedules();
+      } catch (e) {
+        console.error("予定削除エラー:", e);
+        showToast("削除に失敗しました");
+      }
+    }
+
+    async function loadSchedules() {
+      const listEl = document.getElementById('scheduleList');
+      listEl.innerHTML = `<p class="text-center text-slate-400 text-sm py-8">予定を読み込み中... 📅</p>`;
+
+      try {
+        const snapshot = await db.collection('schedules').orderBy('date', 'asc').get();
+        cachedSchedules = [];
+        snapshot.forEach(doc => {
+          cachedSchedules.push({ id: doc.id, ...doc.data() });
+        });
+
+        if (cachedSchedules.length === 0) {
+          listEl.innerHTML = `
+            <div class="bg-white rounded-2xl p-8 text-center card-shadow">
+              <p class="text-3xl mb-2">📅</p>
+              <p class="font-bold text-slate-600">現在予定されているスケジュールはありません</p>
+              <p class="text-xs text-slate-400 mt-1">管理者が予定を追加するとここに表示されます</p>
+            </div>`;
+          return;
+        }
+
+        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+        listEl.innerHTML = cachedSchedules.map(item => {
+          // 日付フォーマット (YYYY-MM-DD -> M月D日(曜))
+          let dateFormatted = item.date;
+          if (item.date) {
+            const parts = item.date.split('-');
+            if (parts.length === 3) {
+              const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+              const w = dayNames[d.getDay()];
+              dateFormatted = `${parseInt(parts[1])}月${parseInt(parts[2])}日(${w})`;
+            }
+          }
+
+          // 種別バッジの色
+          let badgeColor = "bg-green-100 text-green-800";
+          if (item.type === '練習試合') badgeColor = "bg-orange-100 text-orange-800";
+          if (item.type === '公式戦・大会') badgeColor = "bg-red-100 text-red-800";
+          if (item.type === 'イベント・その他') badgeColor = "bg-blue-100 text-blue-800";
+
+          // 出欠状況の集計
+          const att = item.attendance || {};
+          const yesList = [];
+          const maybeList = [];
+          const noList = [];
+
+          Object.values(att).forEach(entry => {
+            if (entry.status === 'yes') yesList.push(entry.name);
+            else if (entry.status === 'maybe') maybeList.push(entry.name);
+            else if (entry.status === 'no') noList.push(entry.name);
+          });
+
+          const myStatus = att[currentUser.userId]?.status || '';
+
+          const yesBtnClass = myStatus === 'yes' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-green-50';
+          const maybeBtnClass = myStatus === 'maybe' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-amber-50';
+          const noBtnClass = myStatus === 'no' ? 'bg-slate-600 text-white border-slate-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100';
+
+          // 管理者のみ表示される編集・削除ボタン
+          const adminControlsHtml = isAdmin ? `
+            <div class="flex items-center space-x-1">
+              <button onclick="openScheduleModal('${item.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg transition">✏️ 編集</button>
+              <button onclick="deleteSchedule('${item.id}')" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-lg transition">🗑️</button>
+            </div>
+          ` : '';
+
+          return `
+            <div class="bg-white rounded-3xl p-4 card-shadow space-y-3">
+              <!-- 上部：種別＆管理者コントロール -->
+              <div class="flex items-center justify-between">
+                <span class="${badgeColor} text-xs font-extrabold px-2.5 py-1 rounded-full">${escapeHtml(item.type || '練習')}</span>
+                ${adminControlsHtml}
+              </div>
+
+              <!-- 日時・場所 -->
+              <div>
+                <h3 class="font-extrabold text-lg text-slate-800">${escapeHtml(dateFormatted)}</h3>
+                ${item.time ? `<p class="text-sm font-bold text-slate-600 mt-0.5">⏰ ${escapeHtml(item.time)}</p>` : ''}
+                ${item.place ? `<p class="text-sm font-bold text-slate-600 mt-0.5">📍 ${escapeHtml(item.place)}</p>` : ''}
+                ${item.note ? `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl mt-2">${escapeHtml(item.note)}</p>` : ''}
+              </div>
+
+              <!-- 自分の出欠回答ボタン（全員操作可能） -->
+              <div class="pt-2 border-t border-slate-100">
+                <p class="text-[11px] font-bold text-slate-400 mb-1.5">あなたの出欠（タップで変更）：</p>
+                <div class="grid grid-cols-3 gap-2">
+                  <button onclick="setAttendance('${item.id}', 'yes')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${yesBtnClass}">
+                    ⭕ 参加 (${yesList.length})
+                  </button>
+                  <button onclick="setAttendance('${item.id}', 'maybe')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${maybeBtnClass}">
+                    🔺 未定 (${maybeList.length})
+                  </button>
+                  <button onclick="setAttendance('${item.id}', 'no')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${noBtnClass}">
+                    ❌ 欠席 (${noList.length})
+                  </button>
+                </div>
+              </div>
+
+              <!-- 参加者メンバー一覧 -->
+              <div class="bg-slate-50 rounded-2xl p-3 text-xs space-y-1.5">
+                <div>
+                  <span class="font-extrabold text-green-700">⭕ 参加 (${yesList.length}名)：</span>
+                  <span class="text-slate-600">${yesList.length > 0 ? yesList.map(n => escapeHtml(n)).join('、') : 'まだ回答なし'}</span>
+                </div>
+                ${maybeList.length > 0 ? `
+                <div>
+                  <span class="font-extrabold text-amber-600">🔺 未定 (${maybeList.length}名)：</span>
+                  <span class="text-slate-600">${maybeList.map(n => escapeHtml(n)).join('、')}</span>
+                </div>` : ''}
+                ${noList.length > 0 ? `
+                <div>
+                  <span class="font-extrabold text-slate-500">❌ 欠席 (${noList.length}名)：</span>
+                  <span class="text-slate-500">${noList.map(n => escapeHtml(n)).join('、')}</span>
+                </div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (e) {
+        console.error("予定取得エラー:", e);
+        listEl.innerHTML = `<p class="text-center text-red-500 text-sm py-6">予定の読み込みに失敗しました。</p>`;
+      }
+    }
+
+    async function setAttendance(scheduleId, status) {
+      try {
+        const docRef = db.collection('schedules').doc(scheduleId);
+        await docRef.update({
+          [`attendance.${currentUser.userId}`]: {
+            name: currentUser.playerName,
+            status: status,
+            updatedAt: new Date().toISOString()
+          }
+        });
+        const labelMap = { yes: '⭕ 参加', maybe: '🔺 未定', no: '❌ 欠席' };
+        showToast(`「${labelMap[status]}」で回答しました！`);
+        await loadSchedules();
+      } catch (e) {
+        console.error("出欠更新エラー:", e);
+        showToast("出欠の登録に失敗しました");
+      }
+    }
+
+    // ==========================================
+    // 練習記録の削除処理
+    // ==========================================
     function confirmDelete(logId) {
       deleteTargetId = logId;
       document.getElementById('deleteModal').classList.remove('hidden');
@@ -391,8 +798,9 @@
       }
     }
 
+    // タブ切り替え
     function switchTab(tabName) {
-      ['timeline', 'record', 'ranking'].forEach(t => {
+      ['timeline', 'record', 'schedule', 'ranking'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.add('hidden');
         const navBtn = document.getElementById(`nav-${t}`);
         if (t !== 'record') {
@@ -409,9 +817,11 @@
       }
 
       if (tabName === 'timeline') loadTimeline();
+      if (tabName === 'schedule') loadSchedules();
       if (tabName === 'ranking') loadRanking();
     }
 
+    // 練習メニュー選択トグル
     function toggleMenu(btn, menuName) {
       const idx = selectedMenus.indexOf(menuName);
       const icon = btn.querySelector('.check-icon');
@@ -428,6 +838,7 @@
       }
     }
 
+    // 練習時間選択
     function selectTime(btn, mins) {
       selectedMinutes = mins;
       document.querySelectorAll('.time-btn').forEach(b => {
@@ -438,6 +849,7 @@
       btn.classList.add('border-green-600', 'bg-green-50', 'text-green-700');
     }
 
+    // 練習記録の保存処理
     async function submitPractice() {
       if (selectedMenus.length === 0) {
         showToast("練習メニューを1つ以上選んでね！⚽");
@@ -454,7 +866,7 @@
       const newRecord = {
         userId: currentUser.userId,
         playerName: currentUser.playerName,
-        avatar: currentUser.pictureUrl,
+        avatar: sanitizeImageUrl(currentUser.pictureUrl),
         menus: [...selectedMenus],
         minutes: selectedMinutes,
         liftingCount: liftingVal ? parseInt(liftingVal, 10) : null,
@@ -486,6 +898,7 @@
       }
     }
 
+    // タイムライン読み込み
     async function loadTimeline() {
       const listEl = document.getElementById('timelineList');
       let logs = [];
@@ -522,11 +935,11 @@
         listEl.innerHTML = logs.map(log => {
           const timeStr = formatTimeAgo(log.createdAt);
           const badgesHtml = (log.menus || []).map(m => 
-            `<span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full">${m}</span>`
+            `<span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full">${escapeHtml(m)}</span>`
           ).join('');
 
           const liftingHtml = log.liftingCount 
-            ? `<div class="mt-2 inline-block bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs font-extrabold px-3 py-1 rounded-lg">👑 リフティング：${log.liftingCount}回！</div>` 
+            ? `<div class="mt-2 inline-block bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs font-extrabold px-3 py-1 rounded-lg">👑 リフティング：${parseInt(log.liftingCount, 10)}回！</div>` 
             : '';
 
           const memoHtml = log.memo 
@@ -546,10 +959,9 @@
 
           return `
             <div class="bg-white rounded-3xl p-4 card-shadow space-y-2.5">
-              <!-- 投稿者ヘッダー -->
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2.5">
-                  <img src="${log.avatar || 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=soccer'}" class="w-10 h-10 rounded-full bg-slate-100 object-cover">
+                  <img src="${sanitizeImageUrl(log.avatar)}" class="w-10 h-10 rounded-full bg-slate-100 object-cover">
                   <div>
                     <p class="font-extrabold text-sm text-slate-800">${escapeHtml(log.playerName || '選手')}</p>
                     <p class="text-[11px] text-slate-400">${timeStr}</p>
@@ -557,20 +969,18 @@
                 </div>
                 <div class="flex items-center space-x-1.5">
                   <span class="bg-green-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">
-                    ⏱️ ${log.minutes}分
+                    ⏱️ ${parseInt(log.minutes, 10) || 0}分
                   </span>
                   ${deleteBtnHtml}
                 </div>
               </div>
 
-              <!-- メニュー・記録内容 -->
               <div class="flex flex-wrap gap-1.5 pt-1">
                 ${badgesHtml}
               </div>
               ${liftingHtml}
               ${memoHtml}
 
-              <!-- 応援スタンプボタン（1人1回・トグル式） -->
               <div class="pt-2 border-t border-slate-100 flex items-center space-x-2">
                 <button onclick="toggleStamp('${log.id}', 'nice', this)" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
                   ⚽ ナイス! <span class="stamp-count text-green-700 font-extrabold">${stamps.nice || 0}</span>
@@ -700,7 +1110,7 @@
             <div class="${bgClass} rounded-2xl p-3 flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 ${medal}
-                <img src="${player.avatar || 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=soccer'}" class="w-10 h-10 rounded-full bg-white object-cover">
+                <img src="${sanitizeImageUrl(player.avatar)}" class="w-10 h-10 rounded-full bg-white object-cover">
                 <div>
                   <p class="font-extrabold text-sm text-slate-800">${escapeHtml(player.playerName)}</p>
                   <p class="text-[11px] text-slate-500">Lv.${lv} ・ 練習 ${player.count}回</p>
@@ -734,10 +1144,11 @@
 
     function escapeHtml(str) {
       if (!str) return '';
-      return str.replace(/[&<>"']/g, function(m) {
+      return String(str).replace(/[&<>"']/g, function(m) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
       });
     }
   </script>
 </body>
 </html>
+```
