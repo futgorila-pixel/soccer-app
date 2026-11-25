@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⚽ サッカー自主練＆試合ノート</title>
-  <meta name="description" content="自主練の記録、試合結果と振り返りノート、チームの予定・出欠確認ができる専用アプリ！">
+  <title>⚽ サッカー自主練＆チーム練習・試合ノート</title>
+  <meta name="description" content="自主練習の記録、チーム練習ノート、試合結果と振り返りノート、チームの予定・出欠確認ができる専用アプリ！">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- LINE LIFF SDK -->
@@ -97,15 +97,31 @@
     </div>
 
     <!-- ==========================================
-         タブ1：みんなの練習タイムライン
+         タブ1：みんなの練習タイムライン（自主練習＆チーム練習）
          ========================================== -->
     <section id="tab-timeline" class="fade-in space-y-4">
       <div class="flex items-center justify-between">
         <h2 class="font-extrabold text-lg text-slate-700 flex items-center">
-          <span class="mr-1.5">🔥</span> みんなの自主練記録
+          <span class="mr-1.5">🔥</span> みんなの練習記録
         </h2>
         <button onclick="loadTimeline()" class="text-xs text-green-700 font-bold bg-green-100 px-3 py-1 rounded-full active:scale-95 transition">
           🔄 更新
+        </button>
+      </div>
+
+      <!-- フィルター切り替え（すべて / 自主練習 / チーム練習 / 自分の記録） -->
+      <div class="bg-white p-1 rounded-2xl grid grid-cols-4 gap-1 shadow-sm border border-slate-100">
+        <button id="filterPractice-all" onclick="setPracticeFilter('all')" class="py-1.5 text-[11px] font-extrabold rounded-xl bg-green-600 text-white transition">
+          すべて
+        </button>
+        <button id="filterPractice-self" onclick="setPracticeFilter('self')" class="py-1.5 text-[11px] font-extrabold rounded-xl text-slate-500 transition">
+          🏃 自主練
+        </button>
+        <button id="filterPractice-team" onclick="setPracticeFilter('team')" class="py-1.5 text-[11px] font-extrabold rounded-xl text-slate-500 transition">
+          ⚽ チーム
+        </button>
+        <button id="filterPractice-mine" onclick="setPracticeFilter('mine')" class="py-1.5 text-[11px] font-extrabold rounded-xl text-slate-500 transition">
+          自分のみ
         </button>
       </div>
 
@@ -117,26 +133,39 @@
     </section>
 
     <!-- ==========================================
-         タブ2：自主練を記録するフォーム
+         タブ2：練習を記録するフォーム（自主練習 ⇔ チーム練習 切り替え）
          ========================================== -->
     <section id="tab-record" class="hidden fade-in">
       <div class="bg-white rounded-3xl p-5 card-shadow space-y-5">
         <h2 class="font-extrabold text-lg text-green-800 text-center border-b border-slate-100 pb-3">
-          ⚽ 今日の自主練を記録しよう！
+          ⚽ 今日の練習を記録しよう！
         </h2>
 
-        <!-- 練習メニュー選択 -->
+        <!-- 練習タイプ切り替え（自主練習 vs チーム練習） -->
         <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">1. どんな練習をした？（いくつでもOK）</label>
-          <div class="grid grid-cols-2 gap-2" id="menuCheckboxes">
+          <label class="block text-sm font-bold text-slate-700 mb-2">1. どっちの練習を記録する？</label>
+          <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl">
+            <button type="button" id="typeBtn-self" onclick="selectPracticeType('self')" class="py-2.5 rounded-xl text-sm font-extrabold bg-emerald-600 text-white shadow-sm transition">
+              🏃 自主練習
+            </button>
+            <button type="button" id="typeBtn-team" onclick="selectPracticeType('team')" class="py-2.5 rounded-xl text-sm font-extrabold text-slate-600 transition">
+              ⚽ チーム練習
+            </button>
+          </div>
+        </div>
+
+        <!-- 練習メニュー選択（自主練用） -->
+        <div id="menuGroup-self">
+          <label class="block text-sm font-bold text-slate-700 mb-2">2. どんな自主練をした？（いくつでもOK）</label>
+          <div class="grid grid-cols-2 gap-2">
             <button type="button" onclick="toggleMenu(this, 'リフティング')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
               <span>⚽ リフティング</span><span class="check-icon opacity-0">✅</span>
             </button>
             <button type="button" onclick="toggleMenu(this, 'ドリブル')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
               <span>⚡ ドリブル</span><span class="check-icon opacity-0">✅</span>
             </button>
-            <button type="button" onclick="toggleMenu(this, 'パス・トラップ')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
-              <span>🎯 パス・トラップ</span><span class="check-icon opacity-0">✅</span>
+            <button type="button" onclick="toggleMenu(this, 'パス・壁当て')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
+              <span>🎯 パス・壁当て</span><span class="check-icon opacity-0">✅</span>
             </button>
             <button type="button" onclick="toggleMenu(this, 'シュート')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
               <span>🥅 シュート</span><span class="check-icon opacity-0">✅</span>
@@ -150,10 +179,35 @@
           </div>
         </div>
 
+        <!-- 練習メニュー選択（チーム練習用） -->
+        <div id="menuGroup-team" class="hidden">
+          <label class="block text-sm font-bold text-slate-700 mb-2">2. どんなチーム練習をした？（いくつでもOK）</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="toggleMenu(this, 'パス・トラップ')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
+              <span>🎯 パス・トラップ</span><span class="check-icon opacity-0">✅</span>
+            </button>
+            <button type="button" onclick="toggleMenu(this, 'ドリブル・1対1')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
+              <span>⚡ ドリブル・1対1</span><span class="check-icon opacity-0">✅</span>
+            </button>
+            <button type="button" onclick="toggleMenu(this, 'シュート練習')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
+              <span>🥅 シュート練習</span><span class="check-icon opacity-0">✅</span>
+            </button>
+            <button type="button" onclick="toggleMenu(this, 'ミニゲーム・紅白戦')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
+              <span>🔥 ゲーム・紅白戦</span><span class="check-icon opacity-0">✅</span>
+            </button>
+            <button type="button" onclick="toggleMenu(this, '戦術・動き方')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
+              <span>🧠 戦術・動き方</span><span class="check-icon opacity-0">✅</span>
+            </button>
+            <button type="button" onclick="toggleMenu(this, 'フィジカル・走力')" class="menu-btn border-2 border-slate-200 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-600 text-left flex items-center justify-between transition">
+              <span>🏃 フィジカル・走力</span><span class="check-icon opacity-0">✅</span>
+            </button>
+          </div>
+        </div>
+
         <!-- 練習時間選択 -->
         <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">2. 何分くらい練習した？</label>
-          <div class="grid grid-cols-4 gap-2" id="timeButtons">
+          <label class="block text-sm font-bold text-slate-700 mb-2">3. 何分くらい練習した？</label>
+          <div class="grid grid-cols-3 gap-2" id="timeButtons">
             <button type="button" onclick="selectTime(this, 15)" class="time-btn border-2 border-slate-200 rounded-xl py-2 text-sm font-extrabold text-slate-600 transition">15分</button>
             <button type="button" onclick="selectTime(this, 30)" class="time-btn border-2 border-green-600 bg-green-50 text-green-700 rounded-xl py-2 text-sm font-extrabold transition">30分</button>
             <button type="button" onclick="selectTime(this, 45)" class="time-btn border-2 border-slate-200 rounded-xl py-2 text-sm font-extrabold text-slate-600 transition">45分</button>
@@ -163,19 +217,25 @@
           </div>
         </div>
 
-        <!-- リフティング最高回数 -->
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-1">3. 今日のリフティング最高回数（任意）</label>
+        <!-- 自主練習用：リフティング最高回数（任意） -->
+        <div id="liftingGroup">
+          <label class="block text-sm font-bold text-slate-700 mb-1">4. 今日のリフティング最高回数（任意）</label>
           <div class="relative">
             <input type="number" id="liftingCountInput" placeholder="例：25" min="0" max="9999" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-base font-bold focus:border-green-500 focus:outline-none">
             <span class="absolute right-4 top-2.5 text-slate-400 font-bold">回</span>
           </div>
         </div>
 
-        <!-- がんばったことメモ -->
-        <div>
-          <label class="block text-sm font-bold text-slate-700 mb-1">4. がんばったこと・感想（任意）</label>
-          <textarea id="memoInput" rows="2" placeholder="例：左足のリフティングをたくさん練習した！" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-green-500 focus:outline-none"></textarea>
+        <!-- 振り返りノート欄（自主練・チーム練習共通＆チーム用課題欄） -->
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-3">
+          <div>
+            <label id="memoLabel" class="block text-xs font-bold text-green-700 mb-1">🌟 がんばったこと・うまくできたこと（任意）</label>
+            <textarea id="memoInput" rows="2" placeholder="例：左足のリフティングをたくさん練習した！" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:border-green-500 focus:outline-none"></textarea>
+          </div>
+          <div id="nextGoalGroup" class="hidden">
+            <label class="block text-xs font-bold text-blue-700 mb-1">🔥 次の練習・試合に向けた課題（任意）</label>
+            <textarea id="nextPracticeGoalInput" rows="2" placeholder="例：紅白戦で声があまり出せなかったので、次はもっと仲間を呼ぶ！" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:border-blue-500 focus:outline-none"></textarea>
+          </div>
         </div>
 
         <!-- 送信ボタン -->
@@ -186,7 +246,7 @@
     </section>
 
     <!-- ==========================================
-         タブ3：試合記録＆振り返りノート（NEW!）
+         タブ3：試合記録＆振り返りノート
          ========================================== -->
     <section id="tab-matches" class="hidden fade-in space-y-4">
       <div class="flex items-center justify-between">
@@ -208,7 +268,6 @@
         </button>
       </div>
 
-      <!-- 試合ノート一覧コンテナ -->
       <div id="matchList" class="space-y-3">
         <div class="text-center py-10 text-slate-400 text-sm">
           試合ノートを読み込み中... 📒
@@ -254,7 +313,7 @@
         <h2 class="font-extrabold text-lg text-center text-slate-800 mb-1">
           🏆 累計練習時間ランキング
         </h2>
-        <p class="text-xs text-center text-slate-400 mb-4">コツコツ練習してレベルアップしよう！</p>
+        <p class="text-xs text-center text-slate-400 mb-4">自主練もチーム練習も合わせてレベルアップ！</p>
         
         <div id="rankingList" class="space-y-2.5">
           <!-- ランキングアイテム -->
@@ -269,7 +328,7 @@
     <div class="max-w-md mx-auto grid grid-cols-5 gap-0.5">
       <button onclick="switchTab('timeline')" id="nav-timeline" class="nav-btn flex flex-col items-center py-1 text-green-600 font-extrabold">
         <span class="text-lg">📋</span>
-        <span class="text-[10px] mt-0.5">自主練</span>
+        <span class="text-[10px] mt-0.5">練習記録</span>
       </button>
       <button onclick="switchTab('matches')" id="nav-matches" class="nav-btn flex flex-col items-center py-1 text-slate-400 font-bold">
         <span class="text-lg">📒</span>
@@ -314,6 +373,34 @@
       <div class="flex space-x-2 pt-2">
         <button onclick="closeDeleteModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">やめる</button>
         <button onclick="executeDelete()" class="flex-1 bg-red-500 text-white font-bold py-3 rounded-xl">消す</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✏️ 練習記録・ノート編集モーダル -->
+  <div id="editPracticeModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-3.5 shadow-xl my-8">
+      <h3 class="font-extrabold text-lg text-slate-800 text-center">✏️ 練習記録を編集</h3>
+      <input type="hidden" id="editPracticeId" value="">
+
+      <div id="editLiftingGroup">
+        <label class="block text-xs font-bold text-slate-600 mb-1">🏆 リフティング最高回数（任意）</label>
+        <input type="number" id="editPracticeLifting" min="0" max="9999" placeholder="例：25" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:border-green-500 focus:outline-none">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-green-700 mb-1">🌟 がんばったこと・意識したこと</label>
+        <textarea id="editPracticeMemo" rows="2" placeholder="練習の感想や意識したことを書こう！" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-green-500 focus:outline-none"></textarea>
+      </div>
+
+      <div id="editNextGoalGroup">
+        <label class="block text-xs font-bold text-blue-700 mb-1">🔥 次の練習・試合に向けた課題</label>
+        <textarea id="editPracticeNextGoal" rows="2" placeholder="次に意識したい課題をメモしよう！" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"></textarea>
+      </div>
+
+      <div class="flex space-x-2 pt-2">
+        <button onclick="closeEditPracticeModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">キャンセル</button>
+        <button id="updatePracticeBtn" onclick="updatePracticeNote()" class="flex-1 pitch-gradient text-white font-bold py-3 rounded-xl">更新する！</button>
       </div>
     </div>
   </div>
@@ -454,7 +541,10 @@
     let isAdmin = localStorage.getItem('soccer_is_admin') === 'true';
     let cachedSchedules = [];
     let cachedMatches = [];
-    let matchFilter = 'all'; // 'all' or 'mine'
+    let cachedPracticeLogs = [];
+    let matchFilter = 'all';
+    let practiceFilter = 'all';
+    let currentPracticeType = 'self'; // 'self' (自主練習) or 'team' (チーム練習)
 
     let localBrowserId = localStorage.getItem('soccer_browser_uid');
     if (!localBrowserId) {
@@ -553,6 +643,121 @@
       document.getElementById('nextLevelText').textContent = `あと ${nextMinutes}分！`;
     }
 
+    // ==========================================
+    // タブ切り替え・練習種別切り替え・メニュー選択
+    // ==========================================
+    function switchTab(tabName) {
+      ['timeline', 'matches', 'record', 'schedule', 'ranking'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const navBtn = document.getElementById(`nav-${t}`);
+        if (t !== 'record' && navBtn) {
+          navBtn.classList.remove('text-green-600', 'font-extrabold');
+          navBtn.classList.add('text-slate-400', 'font-bold');
+        }
+      });
+
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      if (tabName !== 'record') {
+        const activeNav = document.getElementById(`nav-${tabName}`);
+        if (activeNav) {
+          activeNav.classList.remove('text-slate-400', 'font-bold');
+          activeNav.classList.add('text-green-600', 'font-extrabold');
+        }
+      }
+
+      if (tabName === 'timeline') loadTimeline();
+      if (tabName === 'matches') loadMatches();
+      if (tabName === 'schedule') loadSchedules();
+      if (tabName === 'ranking') loadRanking();
+    }
+
+    function selectPracticeType(type) {
+      currentPracticeType = type;
+      selectedMenus = [];
+      document.querySelectorAll('.menu-btn').forEach(b => {
+        b.classList.remove('border-green-600', 'bg-green-50', 'text-green-800');
+        b.classList.add('border-slate-200', 'text-slate-600');
+        b.querySelector('.check-icon').classList.add('opacity-0');
+      });
+
+      const btnSelf = document.getElementById('typeBtn-self');
+      const btnTeam = document.getElementById('typeBtn-team');
+
+      if (type === 'self') {
+        btnSelf.className = "py-2.5 rounded-xl text-sm font-extrabold bg-emerald-600 text-white shadow-sm transition";
+        btnTeam.className = "py-2.5 rounded-xl text-sm font-extrabold text-slate-600 transition";
+        document.getElementById('menuGroup-self').classList.remove('hidden');
+        document.getElementById('menuGroup-team').classList.add('hidden');
+        document.getElementById('liftingGroup').classList.remove('hidden');
+        document.getElementById('nextGoalGroup').classList.add('hidden');
+        document.getElementById('memoLabel').textContent = "🌟 がんばったこと・感想（任意）";
+        document.getElementById('memoInput').placeholder = "例：左足のリフティングをたくさん練習した！";
+        document.getElementById('submitBtn').innerHTML = '<span>🎉 自主練を記録する！</span>';
+      } else {
+        btnTeam.className = "py-2.5 rounded-xl text-sm font-extrabold bg-blue-600 text-white shadow-sm transition";
+        btnSelf.className = "py-2.5 rounded-xl text-sm font-extrabold text-slate-600 transition";
+        document.getElementById('menuGroup-team').classList.remove('hidden');
+        document.getElementById('menuGroup-self').classList.add('hidden');
+        document.getElementById('liftingGroup').classList.add('hidden');
+        document.getElementById('nextGoalGroup').classList.remove('hidden');
+        document.getElementById('memoLabel').textContent = "🌟 うまくできたこと・意識したこと（任意）";
+        document.getElementById('memoInput').placeholder = "例：コーチに言われた通り、パスを出す前に周りを見ることができた！";
+        document.getElementById('submitBtn').innerHTML = '<span>🎉 チーム練習ノートを保存する！</span>';
+      }
+    }
+
+    function toggleMenu(btn, menuName) {
+      const idx = selectedMenus.indexOf(menuName);
+      const icon = btn.querySelector('.check-icon');
+      if (idx === -1) {
+        selectedMenus.push(menuName);
+        btn.classList.add('border-green-600', 'bg-green-50', 'text-green-800');
+        btn.classList.remove('border-slate-200', 'text-slate-600');
+        icon.classList.remove('opacity-0');
+      } else {
+        selectedMenus.splice(idx, 1);
+        btn.classList.remove('border-green-600', 'bg-green-50', 'text-green-800');
+        btn.classList.add('border-slate-200', 'text-slate-600');
+        icon.classList.add('opacity-0');
+      }
+    }
+
+    function selectTime(btn, mins) {
+      selectedMinutes = mins;
+      document.querySelectorAll('.time-btn').forEach(b => {
+        b.classList.remove('border-green-600', 'bg-green-50', 'text-green-700');
+        b.classList.add('border-slate-200', 'text-slate-600');
+      });
+      btn.classList.remove('border-slate-200', 'text-slate-600');
+      btn.classList.add('border-green-600', 'bg-green-50', 'text-green-700');
+    }
+
+    function confirmDelete(collectionName, docId) {
+      deleteTarget = { collection: collectionName, id: docId };
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      deleteTarget = { collection: null, id: null };
+      document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    async function executeDelete() {
+      if (!deleteTarget.collection || !deleteTarget.id) return;
+      const { collection, id } = deleteTarget;
+      closeDeleteModal();
+      try {
+        await db.collection(collection).doc(id).delete();
+        showToast("🗑️ 削除しました");
+        if (collection === 'practice_logs') await loadTimeline();
+        if (collection === 'match_notes') await loadMatches();
+        if (collection === 'schedules') await loadSchedules();
+      } catch (e) {
+        console.error("削除エラー:", e);
+        showToast("削除に失敗しました");
+      }
+    }
+
     // 選手名変更モーダル
     function openNameModal() {
       document.getElementById('playerNameInput').value = localStorage.getItem('soccer_player_name') || '';
@@ -578,13 +783,285 @@
     }
 
     // ==========================================
+    // 🏃 自主練習＆⚽ チーム練習ノート（記録・編集・表示）
+    // ==========================================
+    function setPracticeFilter(mode) {
+      practiceFilter = mode;
+      ['all', 'self', 'team', 'mine'].forEach(m => {
+        const btn = document.getElementById(`filterPractice-${m}`);
+        if (m === mode) {
+          btn.className = "py-1.5 text-[11px] font-extrabold rounded-xl bg-green-600 text-white transition";
+        } else {
+          btn.className = "py-1.5 text-[11px] font-extrabold rounded-xl text-slate-500 transition";
+        }
+      });
+      renderPracticeTimeline();
+    }
+
+    function openEditPracticeModal(logId) {
+      const target = cachedPracticeLogs.find(l => l.id === logId);
+      if (!target) return;
+      document.getElementById('editPracticeId').value = target.id;
+      document.getElementById('editPracticeLifting').value = target.liftingCount || '';
+      document.getElementById('editPracticeMemo').value = target.memo || '';
+      document.getElementById('editPracticeNextGoal').value = target.nextGoal || '';
+
+      const isTeam = target.practiceType === 'team';
+      if (isTeam) {
+        document.getElementById('editLiftingGroup').classList.add('hidden');
+        document.getElementById('editNextGoalGroup').classList.remove('hidden');
+      } else {
+        document.getElementById('editLiftingGroup').classList.remove('hidden');
+        document.getElementById('editNextGoalGroup').classList.add('hidden');
+      }
+
+      document.getElementById('editPracticeModal').classList.remove('hidden');
+    }
+
+    function closeEditPracticeModal() {
+      document.getElementById('editPracticeModal').classList.add('hidden');
+    }
+
+    async function updatePracticeNote() {
+      const logId = document.getElementById('editPracticeId').value;
+      if (!logId) return;
+
+      const liftingRaw = document.getElementById('editPracticeLifting').value;
+      const memo = document.getElementById('editPracticeMemo').value.trim();
+      const nextGoal = document.getElementById('editPracticeNextGoal').value.trim();
+
+      const btn = document.getElementById('updatePracticeBtn');
+      btn.disabled = true;
+      btn.textContent = "更新中...";
+
+      try {
+        await db.collection('practice_logs').doc(logId).update({
+          liftingCount: liftingRaw ? parseInt(liftingRaw, 10) : null,
+          memo: memo,
+          nextGoal: nextGoal,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast("✅ 記録を更新したよ！");
+        closeEditPracticeModal();
+        await loadTimeline();
+      } catch (e) {
+        console.error("練習記録更新エラー:", e);
+        showToast("更新に失敗しました");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "更新する！";
+      }
+    }
+
+    async function submitPractice() {
+      if (selectedMenus.length === 0) {
+        showToast("練習メニューを1つ以上選んでね！⚽");
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span>送信中... ⏳</span>';
+
+      const liftingVal = document.getElementById('liftingCountInput').value;
+      const memoVal = document.getElementById('memoInput').value.trim();
+      const nextGoalVal = document.getElementById('nextPracticeGoalInput').value.trim();
+
+      const newRecord = {
+        userId: currentUser.userId,
+        playerName: currentUser.playerName,
+        avatar: sanitizeImageUrl(currentUser.pictureUrl),
+        practiceType: currentPracticeType, // 'self' or 'team'
+        menus: [...selectedMenus],
+        minutes: selectedMinutes,
+        liftingCount: (currentPracticeType === 'self' && liftingVal) ? parseInt(liftingVal, 10) : null,
+        memo: memoVal,
+        nextGoal: (currentPracticeType === 'team') ? nextGoalVal : '',
+        stamps: { nice: 0, fire: 0, clap: 0 },
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        await db.collection('practice_logs').add(newRecord);
+
+        selectedMenus = [];
+        document.querySelectorAll('.menu-btn').forEach(b => {
+          b.classList.remove('border-green-600', 'bg-green-50', 'text-green-800');
+          b.classList.add('border-slate-200', 'text-slate-600');
+          b.querySelector('.check-icon').classList.add('opacity-0');
+        });
+        document.getElementById('liftingCountInput').value = '';
+        document.getElementById('memoInput').value = '';
+        document.getElementById('nextPracticeGoalInput').value = '';
+
+        const msg = currentPracticeType === 'self' ? "🎉 ナイス自主練！記録したよ！" : "🎉 チーム練習ノートを保存したよ！";
+        showToast(msg);
+        switchTab('timeline');
+      } catch (error) {
+        console.error("保存エラー:", error);
+        showToast("保存に失敗しました。通信環境を確認してください。");
+      } finally {
+        btn.disabled = false;
+        selectPracticeType(currentPracticeType);
+      }
+    }
+
+    async function loadTimeline() {
+      const listEl = document.getElementById('timelineList');
+
+      try {
+        const snapshot = await db.collection('practice_logs')
+          .orderBy('createdAt', 'desc')
+          .limit(50)
+          .get();
+        cachedPracticeLogs = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          cachedPracticeLogs.push({
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+          });
+        });
+
+        const myTotal = cachedPracticeLogs
+          .filter(l => l.playerName === currentUser.playerName || l.userId === currentUser.userId)
+          .reduce((sum, l) => sum + (l.minutes || 0), 0);
+        updateLevelDisplay(myTotal);
+
+        renderPracticeTimeline();
+      } catch (e) {
+        console.error("タイムライン取得エラー:", e);
+        document.getElementById('configWarning').classList.remove('hidden');
+        document.getElementById('errorDetailText').textContent = e.message;
+        listEl.innerHTML = `<p class="text-center text-red-500 text-sm py-6">データの読み込みに失敗しました。</p>`;
+      }
+    }
+
+    function renderPracticeTimeline() {
+      const listEl = document.getElementById('timelineList');
+      let filtered = cachedPracticeLogs;
+
+      if (practiceFilter === 'self') {
+        filtered = cachedPracticeLogs.filter(l => l.practiceType !== 'team');
+      } else if (practiceFilter === 'team') {
+        filtered = cachedPracticeLogs.filter(l => l.practiceType === 'team');
+      } else if (practiceFilter === 'mine') {
+        filtered = cachedPracticeLogs.filter(l => l.userId === currentUser.userId || l.playerName === currentUser.playerName);
+      }
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center card-shadow">
+            <p class="text-3xl mb-2">⚽</p>
+            <p class="font-bold text-slate-600">まだ練習記録がありません</p>
+            <p class="text-xs text-slate-400 mt-1">下の「＋ 記録する」から最初の練習を記録しよう！</p>
+          </div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(log => {
+        const isTeam = log.practiceType === 'team';
+        const timeStr = formatTimeAgo(log.createdAt);
+
+        const typeBadge = isTeam
+          ? `<span class="bg-blue-100 text-blue-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md">⚽ チーム練習</span>`
+          : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-md">🏃 自主練</span>`;
+
+        const badgesHtml = (log.menus || []).map(m => 
+          `<span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">${escapeHtml(m)}</span>`
+        ).join('');
+
+        const liftingHtml = (!isTeam && log.liftingCount)
+          ? `<div class="inline-block bg-yellow-100 text-yellow-900 text-xs font-extrabold px-3 py-1 rounded-xl">
+               🏆 リフティング最高 ${parseInt(log.liftingCount, 10)}回！
+             </div>` 
+          : '';
+
+        const memoTitle = isTeam ? '🌟 うまくできたこと・意識したこと' : '🌟 がんばったこと・感想';
+        const memoHtml = log.memo 
+          ? `<div class="bg-green-50/80 border border-green-100 rounded-2xl p-3">
+               <p class="text-[11px] font-extrabold text-green-700 mb-0.5">${memoTitle}</p>
+               <p class="text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(log.memo)}</p>
+             </div>` 
+          : '';
+
+        const nextGoalHtml = (isTeam && log.nextGoal)
+          ? `<div class="bg-blue-50/80 border border-blue-100 rounded-2xl p-3">
+               <p class="text-[11px] font-extrabold text-blue-700 mb-0.5">🔥 次の練習・試合に向けた課題</p>
+               <p class="text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(log.nextGoal)}</p>
+             </div>` 
+          : '';
+
+        const isMyPost = (log.userId === currentUser.userId) || (log.playerName === currentUser.playerName);
+        const ownerBtnsHtml = isMyPost 
+          ? `<div class="flex items-center space-x-1">
+               <button onclick="openEditPracticeModal('${log.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-2 py-1 rounded-lg transition" title="編集">✏️</button>
+               <button onclick="confirmDelete('practice_logs', '${log.id}')" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 font-bold px-2 py-1 rounded-lg transition" title="削除">🗑️</button>
+             </div>` 
+          : '';
+
+        const stamps = log.stamps || { nice: 0, fire: 0, clap: 0 };
+        const myStamped = getMyStamped(log.id);
+        const niceClass = myStamped.nice ? 'bg-green-100 border-green-500 text-green-800' : 'bg-slate-50 border-slate-200 text-slate-700';
+        const fireClass = myStamped.fire ? 'bg-orange-100 border-orange-500 text-orange-800' : 'bg-slate-50 border-slate-200 text-slate-700';
+        const clapClass = myStamped.clap ? 'bg-blue-100 border-blue-500 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-700';
+
+        return `
+          <div class="bg-white rounded-3xl p-4 card-shadow space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <img src="${sanitizeImageUrl(log.avatar)}" class="w-10 h-10 rounded-full bg-slate-100 object-cover">
+                <div>
+                  <div class="flex items-center space-x-1.5">
+                    <p class="font-extrabold text-sm text-slate-800">${escapeHtml(log.playerName || '選手')}</p>
+                    ${typeBadge}
+                  </div>
+                  <p class="text-[11px] text-slate-400">${timeStr}</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="bg-green-600 text-white text-xs font-extrabold px-2.5 py-1 rounded-full">
+                  ⏱️ ${parseInt(log.minutes, 10) || 0}分
+                </span>
+                ${ownerBtnsHtml}
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              ${badgesHtml}
+            </div>
+
+            ${liftingHtml}
+
+            <div class="space-y-2 pt-0.5">
+              ${memoHtml}
+              ${nextGoalHtml}
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex items-center space-x-1.5">
+              <button onclick="toggleStamp('practice_logs', '${log.id}', 'nice', this, '')" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
+                ⚽ ナイス! <span class="stamp-count text-green-700 font-extrabold">${stamps.nice || 0}</span>
+              </button>
+              <button onclick="toggleStamp('practice_logs', '${log.id}', 'fire', this, '')" class="flex-1 hover:bg-orange-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${fireClass}">
+                🔥 すごい! <span class="stamp-count text-orange-600 font-extrabold">${stamps.fire || 0}</span>
+              </button>
+              <button onclick="toggleStamp('practice_logs', '${log.id}', 'clap', this, '')" class="flex-1 hover:bg-blue-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${clapClass}">
+                👏 おつかれ! <span class="stamp-count text-blue-600 font-extrabold">${stamps.clap || 0}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==========================================
     // 📒 試合結果＆振り返りノート ロジック
     // ==========================================
     function setMatchFilter(mode) {
       matchFilter = mode;
       const btnAll = document.getElementById('filterAllMatches');
       const btnMine = document.getElementById('filterMyMatches');
-
       if (mode === 'all') {
         btnAll.className = "flex-1 py-1.5 text-xs font-extrabold rounded-xl bg-green-600 text-white transition";
         btnMine.className = "flex-1 py-1.5 text-xs font-extrabold rounded-xl text-slate-500 transition";
@@ -592,30 +1069,28 @@
         btnMine.className = "flex-1 py-1.5 text-xs font-extrabold rounded-xl bg-green-600 text-white transition";
         btnAll.className = "flex-1 py-1.5 text-xs font-extrabold rounded-xl text-slate-500 transition";
       }
-      renderMatchList();
+      renderMatches();
     }
 
     function openMatchModal(matchId = null) {
       if (matchId) {
         const target = cachedMatches.find(m => m.id === matchId);
         if (!target) return;
-        document.getElementById('matchModalTitle').textContent = "✏️ 試合ノートを編集する";
+        document.getElementById('matchModalTitle').textContent = "✏️ 試合ノートを編集";
         document.getElementById('editMatchId').value = target.id;
         document.getElementById('matchCategory').value = target.category || '練習試合';
-        document.getElementById('matchDate').value = target.matchDate || '';
+        document.getElementById('matchDate').value = target.date || '';
         document.getElementById('matchOpponent').value = target.opponent || '';
-        document.getElementById('matchScoreUs').value = target.scoreUs !== undefined && target.scoreUs !== null ? target.scoreUs : '';
-        document.getElementById('matchScoreThem').value = target.scoreThem !== undefined && target.scoreThem !== null ? target.scoreThem : '';
-        document.getElementById('matchMyGoals').value = target.myGoals !== undefined && target.myGoals !== null ? target.myGoals : '';
+        document.getElementById('matchScoreUs').value = target.scoreUs !== undefined ? target.scoreUs : '';
+        document.getElementById('matchScoreThem').value = target.scoreThem !== undefined ? target.scoreThem : '';
+        document.getElementById('matchMyGoals').value = target.myGoals !== undefined ? target.myGoals : '';
         document.getElementById('matchGoodPoint').value = target.goodPoint || '';
         document.getElementById('matchNextGoal').value = target.nextGoal || '';
       } else {
         document.getElementById('matchModalTitle').textContent = "📒 試合の記録と振り返りノート";
         document.getElementById('editMatchId').value = '';
         document.getElementById('matchCategory').value = '練習試合';
-        // 今日の日付をデフォルトセット
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('matchDate').value = today;
+        document.getElementById('matchDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('matchOpponent').value = '';
         document.getElementById('matchScoreUs').value = '';
         document.getElementById('matchScoreThem').value = '';
@@ -633,7 +1108,7 @@
     async function saveMatchNote() {
       const editId = document.getElementById('editMatchId').value;
       const category = document.getElementById('matchCategory').value;
-      const matchDate = document.getElementById('matchDate').value;
+      const date = document.getElementById('matchDate').value;
       const opponent = document.getElementById('matchOpponent').value.trim();
       const scoreUsRaw = document.getElementById('matchScoreUs').value;
       const scoreThemRaw = document.getElementById('matchScoreThem').value;
@@ -642,45 +1117,43 @@
       const nextGoal = document.getElementById('matchNextGoal').value.trim();
 
       if (!opponent) {
-        showToast("大会名や対戦相手を入力してね！");
+        showToast("大会名や対戦相手を入力してね！⚽");
         return;
       }
-      if (!goodPoint && !nextGoal) {
-        showToast("「良かったこと」か「次の課題」を書いてね！");
-        return;
-      }
-
-      const scoreUs = scoreUsRaw !== '' ? parseInt(scoreUsRaw, 10) : null;
-      const scoreThem = scoreThemRaw !== '' ? parseInt(scoreThemRaw, 10) : null;
-      const myGoals = myGoalsRaw !== '' ? parseInt(myGoalsRaw, 10) : null;
 
       const btn = document.getElementById('saveMatchBtn');
       btn.disabled = true;
       btn.textContent = "保存中...";
 
+      const payload = {
+        userId: currentUser.userId,
+        playerName: currentUser.playerName,
+        avatar: sanitizeImageUrl(currentUser.pictureUrl),
+        category,
+        date,
+        opponent,
+        scoreUs: scoreUsRaw !== '' ? parseInt(scoreUsRaw, 10) : 0,
+        scoreThem: scoreThemRaw !== '' ? parseInt(scoreThemRaw, 10) : 0,
+        myGoals: myGoalsRaw !== '' ? parseInt(myGoalsRaw, 10) : 0,
+        goodPoint,
+        nextGoal
+      };
+
       try {
         if (editId) {
-          await db.collection('match_notes').doc(editId).update({
-            category, matchDate, opponent, scoreUs, scoreThem, myGoals, goodPoint, nextGoal,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          showToast("✅ 試合ノートを更新しました！");
+          await db.collection('match_notes').doc(editId).update(payload);
+          showToast("✅ 試合ノートを更新したよ！");
         } else {
-          await db.collection('match_notes').add({
-            userId: currentUser.userId,
-            playerName: currentUser.playerName,
-            avatar: sanitizeImageUrl(currentUser.pictureUrl),
-            category, matchDate, opponent, scoreUs, scoreThem, myGoals, goodPoint, nextGoal,
-            stamps: { nice: 0, fire: 0, clap: 0 },
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          showToast("🎉 試合ノートを保存しました！");
+          payload.stamps = { nice: 0, fire: 0, clap: 0 };
+          payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection('match_notes').add(payload);
+          showToast("🎉 試合ノートを保存したよ！");
         }
         closeMatchModal();
         await loadMatches();
       } catch (e) {
         console.error("試合ノート保存エラー:", e);
-        showToast("保存に失敗しました。通信環境を確認してください。");
+        showToast("保存に失敗しました");
       } finally {
         btn.disabled = false;
         btn.textContent = "ノートを保存！";
@@ -689,30 +1162,27 @@
 
     async function loadMatches() {
       const listEl = document.getElementById('matchList');
-      listEl.innerHTML = `<p class="text-center text-slate-400 text-sm py-8">試合ノートを読み込み中... 📒</p>`;
+      listEl.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">試合ノートを読み込み中... 📒</div>`;
 
       try {
         const snapshot = await db.collection('match_notes')
           .orderBy('createdAt', 'desc')
-          .limit(40)
+          .limit(50)
           .get();
+
         cachedMatches = [];
         snapshot.forEach(doc => {
-          const data = doc.data();
-          cachedMatches.push({
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
-          });
+          cachedMatches.push({ id: doc.id, ...doc.data() });
         });
-        renderMatchList();
+
+        renderMatches();
       } catch (e) {
-        console.error("試合ノート取得エラー:", e);
+        console.error("試合ノート読み込みエラー:", e);
         listEl.innerHTML = `<p class="text-center text-red-500 text-sm py-6">試合ノートの読み込みに失敗しました。</p>`;
       }
     }
 
-    function renderMatchList() {
+    function renderMatches() {
       const listEl = document.getElementById('matchList');
       let filtered = cachedMatches;
 
@@ -722,7 +1192,7 @@
 
       if (filtered.length === 0) {
         listEl.innerHTML = `
-          <div class="bg-white rounded-2xl p-8 text-center card-shadow">
+          <div class="bg-white rounded-3xl p-8 text-center card-shadow">
             <p class="text-3xl mb-2">📒</p>
             <p class="font-bold text-slate-600">まだ試合ノートがありません</p>
             <p class="text-xs text-slate-400 mt-1">右上の「✏️ ノートを書く」から試合の振り返りを残そう！</p>
@@ -730,112 +1200,73 @@
         return;
       }
 
-      listEl.innerHTML = filtered.map(item => {
-        const isMyPost = (item.userId === currentUser.userId) || (item.playerName === currentUser.playerName);
+      listEl.innerHTML = filtered.map(m => {
+        const us = parseInt(m.scoreUs, 10) || 0;
+        const them = parseInt(m.scoreThem, 10) || 0;
+        const myGoals = parseInt(m.myGoals, 10) || 0;
 
-        // 種別バッジ
-        let catColor = "bg-orange-100 text-orange-800";
-        if (item.category === '公式戦・大会') catColor = "bg-red-100 text-red-800";
-        if (item.category === '紅白戦') catColor = "bg-green-100 text-green-800";
+        let resultBadge = `<span class="bg-slate-200 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full">△ 引き分け</span>`;
+        if (us > them) resultBadge = `<span class="bg-red-500 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full">🏆 WIN!</span>`;
+        if (us < them) resultBadge = `<span class="bg-blue-500 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full">🔥 LOSE</span>`;
 
-        // 日付表示
-        let dateStr = item.matchDate || '';
-        if (dateStr) {
-          const parts = dateStr.split('-');
-          if (parts.length === 3) {
-            dateStr = `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
-          }
-        }
-
-        // スコア＆勝敗バッジ
-        let scoreHtml = '';
-        if (item.scoreUs !== null && item.scoreThem !== null && item.scoreUs !== undefined && item.scoreThem !== undefined) {
-          let resultBadge = '<span class="bg-slate-200 text-slate-700 text-[11px] font-extrabold px-2 py-0.5 rounded-md">引き分け</span>';
-          if (item.scoreUs > item.scoreThem) {
-            resultBadge = '<span class="bg-yellow-400 text-green-950 text-[11px] font-extrabold px-2 py-0.5 rounded-md">WIN! 勝ち</span>';
-          } else if (item.scoreUs < item.scoreThem) {
-            resultBadge = '<span class="bg-blue-100 text-blue-800 text-[11px] font-extrabold px-2 py-0.5 rounded-md">LOSE</span>';
-          }
-
-          const goalBadge = (item.myGoals && item.myGoals > 0)
-            ? `<span class="bg-orange-500 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-md">⚽ ${item.myGoals}ゴール！</span>`
-            : '';
-
-          scoreHtml = `
-            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex items-center justify-between">
-              <div class="flex items-center space-x-2">
-                <span class="font-extrabold text-xl text-slate-800">${item.scoreUs} - ${item.scoreThem}</span>
-                ${resultBadge}
-              </div>
-              ${goalBadge}
-            </div>
-          `;
-        } else if (item.myGoals && item.myGoals > 0) {
-          scoreHtml = `<div><span class="bg-orange-500 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">⚽ 個人 ${item.myGoals}ゴール！</span></div>`;
-        }
-
-        // 編集・削除ボタン（本人のみ）
-        const ownerBtns = isMyPost ? `
+        const isMine = (m.userId === currentUser.userId) || (m.playerName === currentUser.playerName);
+        const ownerControls = isMine ? `
           <div class="flex items-center space-x-1">
-            <button onclick="openMatchModal('${item.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-2 py-1 rounded-lg transition">✏️</button>
-            <button onclick="confirmDelete('match_notes', '${item.id}')" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 font-bold px-2 py-1 rounded-lg transition">🗑️</button>
+            <button onclick="openMatchModal('${m.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-2 py-1 rounded-lg transition">✏️</button>
+            <button onclick="confirmDelete('match_notes', '${m.id}')" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 font-bold px-2 py-1 rounded-lg transition">🗑️</button>
           </div>
         ` : '';
 
-        // スタンプ
-        const stamps = item.stamps || { nice: 0, fire: 0, clap: 0 };
-        const myStamped = getMyStamped('match_' + item.id);
+        const stamps = m.stamps || { nice: 0, fire: 0, clap: 0 };
+        const myStamped = getMyStamped('match_' + m.id);
         const niceClass = myStamped.nice ? 'bg-green-100 border-green-500 text-green-800' : 'bg-slate-50 border-slate-200 text-slate-700';
         const fireClass = myStamped.fire ? 'bg-orange-100 border-orange-500 text-orange-800' : 'bg-slate-50 border-slate-200 text-slate-700';
 
         return `
           <div class="bg-white rounded-3xl p-4 card-shadow space-y-3">
-            <!-- ヘッダー -->
             <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2.5">
-                <img src="${sanitizeImageUrl(item.avatar)}" class="w-9 h-9 rounded-full bg-slate-100 object-cover">
+              <div class="flex items-center space-x-2">
+                <img src="${sanitizeImageUrl(m.avatar)}" class="w-8 h-8 rounded-full bg-slate-100 object-cover">
                 <div>
-                  <p class="font-extrabold text-sm text-slate-800">${escapeHtml(item.playerName || '選手')}</p>
-                  <p class="text-[11px] text-slate-400">${escapeHtml(dateStr)} 記録</p>
+                  <p class="font-extrabold text-xs text-slate-800">${escapeHtml(m.playerName || '選手')}</p>
+                  <p class="text-[10px] text-slate-400">${escapeHtml(m.date || '')} ・ ${escapeHtml(m.category || '試合')}</p>
                 </div>
               </div>
-              <div class="flex items-center space-x-1.5">
-                <span class="${catColor} text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">${escapeHtml(item.category || '試合')}</span>
-                ${ownerBtns}
+              ${ownerControls}
+            </div>
+
+            <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="font-extrabold text-sm text-slate-800">${escapeHtml(m.opponent)}</span>
+                ${resultBadge}
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="text-2xl font-extrabold text-slate-800 tracking-wider">
+                  <span class="text-green-700">${us}</span> <span class="text-slate-400 text-lg">-</span> <span>${them}</span>
+                </div>
+                ${myGoals > 0 ? `<span class="bg-orange-100 text-orange-800 text-xs font-extrabold px-2.5 py-1 rounded-xl">⚽ 自分 ${myGoals}ゴール!</span>` : ''}
               </div>
             </div>
 
-            <!-- 対戦相手・大会名 -->
-            <div>
-              <h3 class="font-extrabold text-base text-slate-800">🆚 ${escapeHtml(item.opponent)}</h3>
-            </div>
-
-            ${scoreHtml}
-
-            <!-- 振り返り内容 -->
-            <div class="space-y-2">
-              ${item.goodPoint ? `
+            ${m.goodPoint ? `
               <div class="bg-green-50/80 border border-green-100 rounded-2xl p-3">
                 <p class="text-[11px] font-extrabold text-green-700 mb-0.5">🌟 良かったプレー・できたこと</p>
-                <p class="text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(item.goodPoint)}</p>
-              </div>` : ''}
+                <p class="text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(m.goodPoint)}</p>
+              </div>
+            ` : ''}
 
-              ${item.nextGoal ? `
+            ${m.nextGoal ? `
               <div class="bg-blue-50/80 border border-blue-100 rounded-2xl p-3">
                 <p class="text-[11px] font-extrabold text-blue-700 mb-0.5">🔥 次の課題・練習したいこと</p>
-                <p class="text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(item.nextGoal)}</p>
-              </div>` : ''}
-            </div>
+                <p class="text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(m.nextGoal)}</p>
+              </div>
+            ` : ''}
 
-            <!-- スタンプ＆LINEシェア -->
-            <div class="pt-2 border-t border-slate-100 flex items-center space-x-1.5">
-              <button onclick="toggleStamp('match_notes', '${item.id}', 'nice', this, 'match_')" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
-            <!-- スタンプ -->
-            <div class="pt-2 border-t border-slate-100 flex items-center space-x-2">
-              <button onclick="toggleStamp('match_notes', '${item.id}', 'nice', this, 'match_')" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
-                ⚽ ナイス! <span class="stamp-count text-green-700 font-extrabold">${stamps.nice || 0}</span>
+            <div class="pt-1 border-t border-slate-100 flex items-center space-x-2">
+              <button onclick="toggleStamp('match_notes', '${m.id}', 'nice', this, 'match_')" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
+                ⚽ ナイス試合! <span class="stamp-count text-green-700 font-extrabold">${stamps.nice || 0}</span>
               </button>
-              <button onclick="toggleStamp('match_notes', '${item.id}', 'fire', this, 'match_')" class="flex-1 hover:bg-orange-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${fireClass}">
+              <button onclick="toggleStamp('match_notes', '${m.id}', 'fire', this, 'match_')" class="flex-1 hover:bg-orange-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${fireClass}">
                 🔥 ファイト! <span class="stamp-count text-orange-600 font-extrabold">${stamps.fire || 0}</span>
               </button>
             </div>
@@ -845,28 +1276,15 @@
     }
 
     // ==========================================
-    // 🔒 管理者モード制御（日程の編集・削除制限）
+    // 📅 管理者認証＆スケジュール・出欠確認ロジック
     // ==========================================
-    function updateAdminUI() {
-      const addBtn = document.getElementById('addScheduleBtn');
-      const toggleBtn = document.getElementById('adminToggleBtn');
-      const banner = document.getElementById('adminBanner');
-
-      if (isAdmin) {
-        addBtn.classList.remove('hidden');
-        toggleBtn.classList.add('hidden');
-        banner.classList.remove('hidden');
-      } else {
-        addBtn.classList.add('hidden');
-        toggleBtn.classList.remove('hidden');
-        banner.classList.add('hidden');
-      }
-    }
-
     function toggleAdminMode() {
-      if (isAdmin) return;
-      document.getElementById('adminPassInput').value = '';
-      document.getElementById('adminAuthModal').classList.remove('hidden');
+      if (isAdmin) {
+        logoutAdmin();
+      } else {
+        document.getElementById('adminPassInput').value = '';
+        document.getElementById('adminAuthModal').classList.remove('hidden');
+      }
     }
 
     function closeAdminAuthModal() {
@@ -880,7 +1298,7 @@
         localStorage.setItem('soccer_is_admin', 'true');
         closeAdminAuthModal();
         updateAdminUI();
-        loadSchedules();
+        renderSchedules();
         showToast("🔓 管理者モードになりました！");
       } else {
         showToast("❌ パスコードが違います");
@@ -891,23 +1309,32 @@
       isAdmin = false;
       localStorage.removeItem('soccer_is_admin');
       updateAdminUI();
-      loadSchedules();
+      renderSchedules();
       showToast("🔒 管理者モードを解除しました");
     }
 
-    // ==========================================
-    // 📅 スケジュール＆出欠管理ロジック
-    // ==========================================
-    function openScheduleModal(scheduleId = null) {
-      if (!isAdmin) {
-        showToast("管理者のみ操作できます");
-        return;
-      }
+    function updateAdminUI() {
+      const addBtn = document.getElementById('addScheduleBtn');
+      const banner = document.getElementById('adminBanner');
+      const toggleBtn = document.getElementById('adminToggleBtn');
 
+      if (isAdmin) {
+        addBtn.classList.remove('hidden');
+        banner.classList.remove('hidden');
+        toggleBtn.classList.add('hidden');
+      } else {
+        addBtn.classList.add('hidden');
+        banner.classList.add('hidden');
+        toggleBtn.classList.remove('hidden');
+      }
+    }
+
+    function openScheduleModal(scheduleId = null) {
+      if (!isAdmin) return;
       if (scheduleId) {
         const target = cachedSchedules.find(s => s.id === scheduleId);
         if (!target) return;
-        document.getElementById('scheduleModalTitle').textContent = "✏️ 予定を編集する";
+        document.getElementById('scheduleModalTitle').textContent = "✏️ 予定を編集";
         document.getElementById('editScheduleId').value = target.id;
         document.getElementById('schedType').value = target.type || '練習';
         document.getElementById('schedDate').value = target.date || '';
@@ -923,7 +1350,6 @@
         document.getElementById('schedPlace').value = '';
         document.getElementById('schedNote').value = '';
       }
-
       document.getElementById('scheduleModal').classList.remove('hidden');
     }
 
@@ -933,7 +1359,6 @@
 
     async function saveSchedule() {
       if (!isAdmin) return;
-
       const editId = document.getElementById('editScheduleId').value;
       const type = document.getElementById('schedType').value;
       const date = document.getElementById('schedDate').value;
@@ -953,8 +1378,7 @@
       try {
         if (editId) {
           await db.collection('schedules').doc(editId).update({
-            type, date, time, place, note,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            type, date, time, place, note
           });
           showToast("✅ 予定を更新しました！");
         } else {
@@ -963,163 +1387,146 @@
             attendance: {},
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
-          showToast("🎉 新しい予定を追加しました！");
+          showToast("📅 新しい予定を追加しました！");
         }
         closeScheduleModal();
         await loadSchedules();
       } catch (e) {
         console.error("予定保存エラー:", e);
-        showToast("保存に失敗しました");
+        showToast("予定の保存に失敗しました");
       } finally {
         btn.disabled = false;
         btn.textContent = "保存する";
       }
     }
 
-    async function deleteSchedule(scheduleId) {
-      if (!isAdmin) return;
-      if (!confirm("この予定を削除してもよろしいですか？（出欠データも消えます）")) return;
-
-      try {
-        await db.collection('schedules').doc(scheduleId).delete();
-        showToast("🗑️ 予定を削除しました");
-        await loadSchedules();
-      } catch (e) {
-        console.error("予定削除エラー:", e);
-        showToast("削除に失敗しました");
-      }
-    }
-
     async function loadSchedules() {
       const listEl = document.getElementById('scheduleList');
-      listEl.innerHTML = `<p class="text-center text-slate-400 text-sm py-8">予定を読み込み中... 📅</p>`;
+      listEl.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">予定を読み込み中... 📅</div>`;
 
       try {
-        const snapshot = await db.collection('schedules').orderBy('date', 'asc').get();
+        const snapshot = await db.collection('schedules')
+          .orderBy('date', 'asc')
+          .get();
+
         cachedSchedules = [];
         snapshot.forEach(doc => {
           cachedSchedules.push({ id: doc.id, ...doc.data() });
         });
 
-        if (cachedSchedules.length === 0) {
-          listEl.innerHTML = `
-            <div class="bg-white rounded-2xl p-8 text-center card-shadow">
-              <p class="text-3xl mb-2">📅</p>
-              <p class="font-bold text-slate-600">現在予定されているスケジュールはありません</p>
-              <p class="text-xs text-slate-400 mt-1">管理者が予定を追加するとここに表示されます</p>
-            </div>`;
-          return;
-        }
-
-        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
-
-        listEl.innerHTML = cachedSchedules.map(item => {
-          let dateFormatted = item.date;
-          if (item.date) {
-            const parts = item.date.split('-');
-            if (parts.length === 3) {
-              const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-              const w = dayNames[d.getDay()];
-              dateFormatted = `${parseInt(parts[1])}月${parseInt(parts[2])}日(${w})`;
-            }
-          }
-
-          let badgeColor = "bg-green-100 text-green-800";
-          if (item.type === '練習試合') badgeColor = "bg-orange-100 text-orange-800";
-          if (item.type === '公式戦・大会') badgeColor = "bg-red-100 text-red-800";
-          if (item.type === 'イベント・その他') badgeColor = "bg-blue-100 text-blue-800";
-
-          const att = item.attendance || {};
-          const yesList = [];
-          const maybeList = [];
-          const noList = [];
-
-          Object.values(att).forEach(entry => {
-            if (entry.status === 'yes') yesList.push(entry.name);
-            else if (entry.status === 'maybe') maybeList.push(entry.name);
-            else if (entry.status === 'no') noList.push(entry.name);
-          });
-
-          const myStatus = att[currentUser.userId]?.status || '';
-
-          const yesBtnClass = myStatus === 'yes' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-green-50';
-          const maybeBtnClass = myStatus === 'maybe' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-amber-50';
-          const noBtnClass = myStatus === 'no' ? 'bg-slate-600 text-white border-slate-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100';
-
-          const adminControlsHtml = isAdmin ? `
-            <div class="flex items-center space-x-1">
-              <button onclick="openScheduleModal('${item.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg transition">✏️ 編集</button>
-              <button onclick="deleteSchedule('${item.id}')" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-lg transition">🗑️</button>
-            </div>
-          ` : '';
-
-          return `
-            <div class="bg-white rounded-3xl p-4 card-shadow space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="${badgeColor} text-xs font-extrabold px-2.5 py-1 rounded-full">${escapeHtml(item.type || '練習')}</span>
-                ${adminControlsHtml}
-              </div>
-
-              <div>
-                <h3 class="font-extrabold text-lg text-slate-800">${escapeHtml(dateFormatted)}</h3>
-                ${item.time ? `<p class="text-sm font-bold text-slate-600 mt-0.5">⏰ ${escapeHtml(item.time)}</p>` : ''}
-                ${item.place ? `<p class="text-sm font-bold text-slate-600 mt-0.5">📍 ${escapeHtml(item.place)}</p>` : ''}
-                ${item.note ? `<p class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl mt-2">${escapeHtml(item.note)}</p>` : ''}
-              </div>
-
-              <div class="pt-2 border-t border-slate-100">
-                <p class="text-[11px] font-bold text-slate-400 mb-1.5">あなたの出欠（タップで変更）：</p>
-                <div class="grid grid-cols-3 gap-2">
-                  <button onclick="setAttendance('${item.id}', 'yes')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${yesBtnClass}">
-                    ⭕ 参加 (${yesList.length})
-                  </button>
-                  <button onclick="setAttendance('${item.id}', 'maybe')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${maybeBtnClass}">
-                    🔺 未定 (${maybeList.length})
-                  </button>
-                  <button onclick="setAttendance('${item.id}', 'no')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${noBtnClass}">
-                    ❌ 欠席 (${noList.length})
-                  </button>
-                </div>
-              </div>
-
-              <div class="bg-slate-50 rounded-2xl p-3 text-xs space-y-1.5">
-                <div>
-                  <span class="font-extrabold text-green-700">⭕ 参加 (${yesList.length}名)：</span>
-                  <span class="text-slate-600">${yesList.length > 0 ? yesList.map(n => escapeHtml(n)).join('、') : 'まだ回答なし'}</span>
-                </div>
-                ${maybeList.length > 0 ? `
-                <div>
-                  <span class="font-extrabold text-amber-600">🔺 未定 (${maybeList.length}名)：</span>
-                  <span class="text-slate-600">${maybeList.map(n => escapeHtml(n)).join('、')}</span>
-                </div>` : ''}
-                ${noList.length > 0 ? `
-                <div>
-                  <span class="font-extrabold text-slate-500">❌ 欠席 (${noList.length}名)：</span>
-                  <span class="text-slate-500">${noList.map(n => escapeHtml(n)).join('、')}</span>
-                </div>` : ''}
-              </div>
-            </div>
-          `;
-        }).join('');
-
+        renderSchedules();
       } catch (e) {
-        console.error("予定取得エラー:", e);
+        console.error("予定読み込みエラー:", e);
         listEl.innerHTML = `<p class="text-center text-red-500 text-sm py-6">予定の読み込みに失敗しました。</p>`;
       }
     }
 
-    async function setAttendance(scheduleId, status) {
+    function formatJapaneseDate(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      return `${parseInt(parts[1], 10)}月${parseInt(parts[2], 10)}日（${days[d.getDay()]}）`;
+    }
+
+    function renderSchedules() {
+      const listEl = document.getElementById('scheduleList');
+
+      if (cachedSchedules.length === 0) {
+        listEl.innerHTML = `
+          <div class="bg-white rounded-3xl p-8 text-center card-shadow">
+            <p class="text-3xl mb-2">📅</p>
+            <p class="font-bold text-slate-600">まだ予定が登録されていません</p>
+            <p class="text-xs text-slate-400 mt-1">管理者が予定を追加するとここに表示されます</p>
+          </div>`;
+        return;
+      }
+
+      listEl.innerHTML = cachedSchedules.map(sched => {
+        const attendance = sched.attendance || {};
+        const myStatus = attendance[currentUser.userId]?.status || '';
+
+        const yesList = [];
+        const maybeList = [];
+        const noList = [];
+
+        Object.values(attendance).forEach(entry => {
+          if (!entry || !entry.playerName) return;
+          if (entry.status === 'yes') yesList.push(escapeHtml(entry.playerName));
+          else if (entry.status === 'maybe') maybeList.push(escapeHtml(entry.playerName));
+          else if (entry.status === 'no') noList.push(escapeHtml(entry.playerName));
+        });
+
+        let typeBadgeColor = "bg-green-100 text-green-800";
+        if (sched.type === '練習試合') typeBadgeColor = "bg-orange-100 text-orange-800";
+        if (sched.type === '公式戦・大会') typeBadgeColor = "bg-red-100 text-red-800";
+        if (sched.type === 'イベント・その他') typeBadgeColor = "bg-purple-100 text-purple-800";
+
+        const adminControls = isAdmin ? `
+          <div class="flex items-center space-x-1.5">
+            <button onclick="openScheduleModal('${sched.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg">✏️ 編集</button>
+            <button onclick="confirmDelete('schedules', '${sched.id}')" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold px-2 py-1 rounded-lg">🗑️</button>
+          </div>
+        ` : '';
+
+        const yesBtnClass = myStatus === 'yes' ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-green-50';
+        const maybeBtnClass = myStatus === 'maybe' ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-amber-50';
+        const noBtnClass = myStatus === 'no' ? 'bg-red-500 text-white border-red-500 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-red-50';
+
+        return `
+          <div class="bg-white rounded-3xl p-4 card-shadow space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="${typeBadgeColor} text-xs font-extrabold px-2.5 py-1 rounded-full">${escapeHtml(sched.type || '練習')}</span>
+                <span class="font-extrabold text-base text-slate-800">${formatJapaneseDate(sched.date)}</span>
+              </div>
+              ${adminControls}
+            </div>
+
+            <div class="text-xs text-slate-600 space-y-1 bg-slate-50 p-3 rounded-2xl">
+              ${sched.time ? `<p>⏰ <strong>時間：</strong>${escapeHtml(sched.time)}</p>` : ''}
+              ${sched.place ? `<p>📍 <strong>場所：</strong>${escapeHtml(sched.place)}</p>` : ''}
+              ${sched.note ? `<p class="whitespace-pre-wrap">🎒 <strong>連絡：</strong>${escapeHtml(sched.note)}</p>` : ''}
+            </div>
+
+            <div>
+              <p class="text-[11px] font-bold text-slate-500 mb-1.5">あなたの出欠（タップで回答・変更）：</p>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="submitAttendance('${sched.id}', 'yes')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${yesBtnClass}">
+                  ⭕ 参加 (${yesList.length})
+                </button>
+                <button onclick="submitAttendance('${sched.id}', 'maybe')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${maybeBtnClass}">
+                  🔺 未定 (${maybeList.length})
+                </button>
+                <button onclick="submitAttendance('${sched.id}', 'no')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${noBtnClass}">
+                  ❌ 欠席 (${noList.length})
+                </button>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 text-[11px] space-y-1">
+              <p class="text-green-800"><span class="font-extrabold">⭕ 参加：</span>${yesList.length > 0 ? yesList.join('、') : '<span class="text-slate-400">まだいません</span>'}</p>
+              ${maybeList.length > 0 ? `<p class="text-amber-700"><span class="font-extrabold">🔺 未定：</span>${maybeList.join('、')}</p>` : ''}
+              ${noList.length > 0 ? `<p class="text-slate-500"><span class="font-extrabold">❌ 欠席：</span>${noList.join('、')}</p>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function submitAttendance(scheduleId, status) {
       try {
         const docRef = db.collection('schedules').doc(scheduleId);
         await docRef.update({
           [`attendance.${currentUser.userId}`]: {
-            name: currentUser.playerName,
+            playerName: currentUser.playerName,
             status: status,
-            updatedAt: new Date().toISOString()
+            updatedAt: Date.now()
           }
         });
         const labelMap = { yes: '⭕ 参加', maybe: '🔺 未定', no: '❌ 欠席' };
-        showToast(`「${labelMap[status]}」で回答しました！`);
+        showToast(`「${labelMap[status]}」で登録しました！`);
         await loadSchedules();
       } catch (e) {
         console.error("出欠更新エラー:", e);
@@ -1128,238 +1535,8 @@
     }
 
     // ==========================================
-    // 共通削除モーダル処理（自主練・試合ノート両対応）
+    // 応援スタンプ・ランキング・ユーティリティ
     // ==========================================
-    function confirmDelete(collectionName, docId) {
-      deleteTarget = { collection: collectionName, id: docId };
-      document.getElementById('deleteModal').classList.remove('hidden');
-    }
-    function closeDeleteModal() {
-      deleteTarget = { collection: null, id: null };
-      document.getElementById('deleteModal').classList.add('hidden');
-    }
-    async function executeDelete() {
-      if (!deleteTarget.collection || !deleteTarget.id) return;
-      const { collection, id } = deleteTarget;
-      closeDeleteModal();
-
-      try {
-        await db.collection(collection).doc(id).delete();
-        showToast("🗑️ 削除しました");
-        if (collection === 'practice_logs') await loadTimeline();
-        if (collection === 'match_notes') await loadMatches();
-      } catch (e) {
-        console.error("削除エラー:", e);
-        showToast("削除に失敗しました");
-      }
-    }
-
-    // タブ切り替え（5タブ対応）
-    function switchTab(tabName) {
-      ['timeline', 'matches', 'record', 'schedule', 'ranking'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        const navBtn = document.getElementById(`nav-${t}`);
-        if (t !== 'record') {
-          navBtn.classList.remove('text-green-600', 'font-extrabold');
-          navBtn.classList.add('text-slate-400', 'font-bold');
-        }
-      });
-
-      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-      if (tabName !== 'record') {
-        const activeNav = document.getElementById(`nav-${tabName}`);
-        activeNav.classList.remove('text-slate-400', 'font-bold');
-        activeNav.classList.add('text-green-600', 'font-extrabold');
-      }
-
-      if (tabName === 'timeline') loadTimeline();
-      if (tabName === 'matches') loadMatches();
-      if (tabName === 'schedule') loadSchedules();
-      if (tabName === 'ranking') loadRanking();
-    }
-
-    // 練習メニュー選択トグル
-    function toggleMenu(btn, menuName) {
-      const idx = selectedMenus.indexOf(menuName);
-      const icon = btn.querySelector('.check-icon');
-      if (idx === -1) {
-        selectedMenus.push(menuName);
-        btn.classList.add('border-green-600', 'bg-green-50', 'text-green-800');
-        btn.classList.remove('border-slate-200', 'text-slate-600');
-        icon.classList.remove('opacity-0');
-      } else {
-        selectedMenus.splice(idx, 1);
-        btn.classList.remove('border-green-600', 'bg-green-50', 'text-green-800');
-        btn.classList.add('border-slate-200', 'text-slate-600');
-        icon.classList.add('opacity-0');
-      }
-    }
-
-    // 練習時間選択
-    function selectTime(btn, mins) {
-      selectedMinutes = mins;
-      document.querySelectorAll('.time-btn').forEach(b => {
-        b.classList.remove('border-green-600', 'bg-green-50', 'text-green-700');
-        b.classList.add('border-slate-200', 'text-slate-600');
-      });
-      btn.classList.remove('border-slate-200', 'text-slate-600');
-      btn.classList.add('border-green-600', 'bg-green-50', 'text-green-700');
-    }
-
-    // 練習記録の保存処理
-    async function submitPractice() {
-      if (selectedMenus.length === 0) {
-        showToast("練習メニューを1つ以上選んでね！⚽");
-        return;
-      }
-
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<span>送信中... ⏳</span>';
-
-      const liftingVal = document.getElementById('liftingCountInput').value;
-      const memoVal = document.getElementById('memoInput').value.trim();
-
-      const newRecord = {
-        userId: currentUser.userId,
-        playerName: currentUser.playerName,
-        avatar: sanitizeImageUrl(currentUser.pictureUrl),
-        menus: [...selectedMenus],
-        minutes: selectedMinutes,
-        liftingCount: liftingVal ? parseInt(liftingVal, 10) : null,
-        memo: memoVal,
-        stamps: { nice: 0, fire: 0, clap: 0 },
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      try {
-        await db.collection('practice_logs').add(newRecord);
-
-        selectedMenus = [];
-        document.querySelectorAll('.menu-btn').forEach(b => {
-          b.classList.remove('border-green-600', 'bg-green-50', 'text-green-800');
-          b.classList.add('border-slate-200', 'text-slate-600');
-          b.querySelector('.check-icon').classList.add('opacity-0');
-        });
-        document.getElementById('liftingCountInput').value = '';
-        document.getElementById('memoInput').value = '';
-
-        showToast("🎉 ナイス練習！記録を保存したよ！");
-        switchTab('timeline');
-      } catch (error) {
-        console.error("保存エラー:", error);
-        showToast("保存に失敗しました。通信環境を確認してください。");
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span>🎉 練習を記録する！</span>';
-      }
-    }
-
-    // タイムライン読み込み
-    async function loadTimeline() {
-      const listEl = document.getElementById('timelineList');
-      let logs = [];
-
-      try {
-        const snapshot = await db.collection('practice_logs')
-          .orderBy('createdAt', 'desc')
-          .limit(40)
-          .get();
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          logs.push({
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
-          });
-        });
-
-        const myTotal = logs
-          .filter(l => l.playerName === currentUser.playerName || l.userId === currentUser.userId)
-          .reduce((sum, l) => sum + (l.minutes || 0), 0);
-        updateLevelDisplay(myTotal);
-
-        if (logs.length === 0) {
-          listEl.innerHTML = `
-            <div class="bg-white rounded-2xl p-8 text-center card-shadow">
-              <p class="text-3xl mb-2">⚽</p>
-              <p class="font-bold text-slate-600">まだ記録がありません</p>
-              <p class="text-xs text-slate-400 mt-1">下の「＋ 記録する」から最初の自主練を投稿しよう！</p>
-            </div>`;
-          return;
-        }
-
-        listEl.innerHTML = logs.map(log => {
-          const timeStr = formatTimeAgo(log.createdAt);
-          const badgesHtml = (log.menus || []).map(m => 
-            `<span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full">${escapeHtml(m)}</span>`
-          ).join('');
-
-          const liftingHtml = log.liftingCount 
-            ? `<div class="mt-2 inline-block bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs font-extrabold px-3 py-1 rounded-lg">👑 リフティング：${parseInt(log.liftingCount, 10)}回！</div>` 
-            : '';
-
-          const memoHtml = log.memo 
-            ? `<p class="mt-2 text-sm text-slate-600 bg-slate-50 p-2.5 rounded-xl">${escapeHtml(log.memo)}</p>` 
-            : '';
-
-          const isMyPost = (log.userId === currentUser.userId) || (log.playerName === currentUser.playerName);
-          const deleteBtnHtml = isMyPost 
-            ? `<button onclick="confirmDelete('practice_logs', '${log.id}')" class="text-slate-300 hover:text-red-500 px-1.5 py-0.5 text-sm transition" title="削除">🗑️</button>` 
-            : '';
-
-          const stamps = log.stamps || { nice: 0, fire: 0, clap: 0 };
-          const myStamped = getMyStamped(log.id);
-          const niceClass = myStamped.nice ? 'bg-green-100 border-green-500 text-green-800' : 'bg-slate-50 border-slate-200 text-slate-700';
-          const fireClass = myStamped.fire ? 'bg-orange-100 border-orange-500 text-orange-800' : 'bg-slate-50 border-slate-200 text-slate-700';
-
-          return `
-            <div class="bg-white rounded-3xl p-4 card-shadow space-y-2.5">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2.5">
-                  <img src="${sanitizeImageUrl(log.avatar)}" class="w-10 h-10 rounded-full bg-slate-100 object-cover">
-                  <div>
-                    <p class="font-extrabold text-sm text-slate-800">${escapeHtml(log.playerName || '選手')}</p>
-                    <p class="text-[11px] text-slate-400">${timeStr}</p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-1.5">
-                  <span class="bg-green-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">
-                    ⏱️ ${parseInt(log.minutes, 10) || 0}分
-                  </span>
-                  ${deleteBtnHtml}
-                </div>
-              </div>
-
-              <div class="flex flex-wrap gap-1.5 pt-1">
-                ${badgesHtml}
-              </div>
-              ${liftingHtml}
-              ${memoHtml}
-
-              <div class="pt-2 border-t border-slate-100 flex items-center space-x-1.5">
-                <button onclick="toggleStamp('practice_logs', '${log.id}', 'nice', this, '')" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
-                  ⚽ ナイス! <span class="stamp-count text-green-700 font-extrabold">${stamps.nice || 0}</span>
-              <div class="pt-2 border-t border-slate-100 flex items-center space-x-2">
-                <button onclick="toggleStamp('practice_logs', '${log.id}', 'nice', this, '')" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
-                  ⚽ ナイス! <span class="stamp-count text-green-700 font-extrabold">${stamps.nice || 0}</span>
-                </button>
-                <button onclick="toggleStamp('practice_logs', '${log.id}', 'fire', this, '')" class="flex-1 hover:bg-orange-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${fireClass}">
-                  🔥 すごい! <span class="stamp-count text-orange-600 font-extrabold">${stamps.fire || 0}</span>
-                </button>
-              </div>
-            </div>
-          `;
-        }).join('');
-
-      } catch (e) {
-        console.error("タイムライン取得エラー:", e);
-        document.getElementById('configWarning').classList.remove('hidden');
-        document.getElementById('errorDetailText').textContent = e.message;
-        listEl.innerHTML = `<p class="text-center text-red-500 text-sm py-6">データの読み込みに失敗しました。</p>`;
-      }
-    }
-
     function getMyStamped(storageKey) {
       try {
         const all = JSON.parse(localStorage.getItem('soccer_my_stamps') || '{}');
