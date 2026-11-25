@@ -1,9 +1,11 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>⚽ 自主練チャレンジ！</title>
+  <meta name="description" content="みんなで自主練を記録して応援し合おう！">
   <!-- Tailwind CSS (デザイン用) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- LINE LIFF SDK -->
@@ -22,7 +24,6 @@
     .card-shadow {
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
     }
-    /* タブ切り替えアニメーション */
     .fade-in {
       animation: fadeIn 0.25s ease-in-out;
     }
@@ -35,13 +36,11 @@
 <body class="text-slate-800 pb-24">
 
   <!-- ==========================================
-       ⚙️ 設定エリア（ご自身の本番キー設定済み！）
+       ⚙️ 設定エリア（本番キー設定済み）
        ========================================== -->
   <script>
-    // 1. LINE Developers で取得した LIFF ID
     const MY_LIFF_ID = "2012781434-uVaVDF3P";
 
-    // 2. Firebase で取得した firebaseConfig の中身
     const firebaseConfig = {
       apiKey: "AIzaSyCcFTjeCn13api7dx7kz7nkz2ghTYU3x_s",
       authDomain: "football-training-9521b.firebaseapp.com",
@@ -87,11 +86,11 @@
   <!-- メインコンテンツエリア -->
   <main class="max-w-md mx-auto px-4 mt-5">
     
-    <!-- 設定未完了時のアラート（エラー発生時のみ表示） -->
+    <!-- エラー発生時のみ表示されるアラート -->
     <div id="configWarning" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded-r-xl shadow-sm">
-      <p class="text-sm font-bold text-amber-800">⚠️ データベース接続エラー（デモモードで動作中）</p>
+      <p class="text-sm font-bold text-amber-800">⚠️ データベース接続エラー</p>
       <p id="errorDetailText" class="text-xs text-amber-700 mt-1">
-        Firebaseへの接続に失敗しました。Firestoreが作成されているか確認してください。
+        データの読み込みに失敗しました。通信環境を確認してください。
       </p>
     </div>
 
@@ -223,7 +222,7 @@
     </div>
   </nav>
 
-  <!-- 選手名変更モーダル（親のスマホから使う場合の配慮） -->
+  <!-- 選手名変更モーダル -->
   <div id="nameModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-extrabold text-lg text-slate-800">⚽ 選手の名前を設定しよう</h3>
@@ -236,7 +235,7 @@
     </div>
   </div>
 
-  <!-- 記録削除確認モーダル（confirmの代わり） -->
+  <!-- 記録削除確認モーダル -->
   <div id="deleteModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-xl text-center">
       <div class="text-3xl">🗑️</div>
@@ -249,24 +248,19 @@
     </div>
   </div>
 
-  <!-- 通知トースト（alertの代わり） -->
+  <!-- 通知トースト -->
   <div id="toast" class="hidden fixed top-24 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-sm font-bold px-5 py-3 rounded-full shadow-lg z-50 transition-opacity whitespace-nowrap">
     メッセージ
   </div>
 
-  <!-- Firebase SDK (Compat版を使用して単一HTMLでシンプルに動作) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // ==========================================
-    // アプリのメインロジック
-    // ==========================================
     let db = null;
-    let isDemoMode = false;
     let deleteTargetId = null;
 
-    // ブラウザ固有のユーザーIDを生成・保持（LINE外でも自分の投稿を識別するため）
     let localBrowserId = localStorage.getItem('soccer_browser_uid');
     if (!localBrowserId) {
       localBrowserId = 'user-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
@@ -280,64 +274,47 @@
       playerName: localStorage.getItem('soccer_player_name') || ''
     };
 
-    // フォーム選択状態
     let selectedMenus = [];
     let selectedMinutes = 30;
-    let demoLogs = [];
 
-    // 初期化処理
     window.onload = async function() {
-      // 1. Firebaseの初期化チェック
-      if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("ここに")) {
-        try {
-          firebase.initializeApp(firebaseConfig);
-          db = firebase.firestore();
-        } catch (e) {
-          console.error("Firebase初期化エラー:", e);
-          isDemoMode = true;
-          document.getElementById('configWarning').classList.remove('hidden');
-          document.getElementById('errorDetailText').textContent = e.message;
-        }
-      } else {
-        isDemoMode = true;
+      try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+      } catch (e) {
+        console.error("Firebase初期化エラー:", e);
         document.getElementById('configWarning').classList.remove('hidden');
+        document.getElementById('errorDetailText').textContent = e.message;
       }
 
-      // 2. LINE LIFFの初期化
-      if (MY_LIFF_ID && !MY_LIFF_ID.includes("ここに")) {
-        try {
-          await liff.init({ liffId: MY_LIFF_ID });
-          if (liff.isLoggedIn()) {
-            const profile = await liff.getProfile();
-            currentUser.userId = profile.userId;
-            currentUser.displayName = profile.displayName;
-            if (profile.pictureUrl) {
-              currentUser.pictureUrl = profile.pictureUrl;
-            }
-          } else if (liff.isInClient()) {
-            liff.login();
+      try {
+        await liff.init({ liffId: MY_LIFF_ID });
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          currentUser.userId = profile.userId;
+          currentUser.displayName = profile.displayName;
+          if (profile.pictureUrl) {
+            currentUser.pictureUrl = profile.pictureUrl;
           }
-        } catch (err) {
-          console.error("LIFF初期化エラー:", err);
+        } else if (liff.isInClient()) {
+          liff.login();
         }
+      } catch (err) {
+        console.error("LIFF初期化エラー:", err);
       }
 
-      // ユーザー表示の更新
       if (!currentUser.playerName) {
         currentUser.playerName = currentUser.displayName;
       }
       updateUserHeader();
 
-      // 初回選手名が未設定ならモーダルを表示
       if (!localStorage.getItem('soccer_player_name')) {
         openNameModal();
       }
 
-      // タイムライン読み込み
       await loadTimeline();
     };
 
-    // トースト通知表示関数
     function showToast(msg) {
       const toast = document.getElementById('toast');
       toast.textContent = msg;
@@ -347,13 +324,11 @@
       }, 2800);
     }
 
-    // ヘッダー情報の更新
     function updateUserHeader() {
       document.getElementById('playerNameDisplay').textContent = currentUser.playerName;
       document.getElementById('userAvatar').src = currentUser.pictureUrl;
     }
 
-    // レベル計算とヘッダー反映
     function updateLevelDisplay(totalMinutes) {
       const level = Math.floor(totalMinutes / 60) + 1;
       const remainder = totalMinutes % 60;
@@ -373,7 +348,6 @@
       document.getElementById('nextLevelText').textContent = `あと ${nextMinutes}分！`;
     }
 
-    // 選手名変更モーダル操作
     function openNameModal() {
       document.getElementById('playerNameInput').value = localStorage.getItem('soccer_player_name') || '';
       document.getElementById('nameModal').classList.remove('hidden');
@@ -395,7 +369,6 @@
       loadTimeline();
     }
 
-    // 削除確認モーダル操作
     function confirmDelete(logId) {
       deleteTargetId = logId;
       document.getElementById('deleteModal').classList.remove('hidden');
@@ -410,11 +383,7 @@
       closeDeleteModal();
 
       try {
-        if (isDemoMode) {
-          demoLogs = demoLogs.filter(l => l.id !== targetId);
-        } else {
-          await db.collection('practice_logs').doc(targetId).delete();
-        }
+        await db.collection('practice_logs').doc(targetId).delete();
         showToast("🗑️ 記録を削除しました");
         await loadTimeline();
       } catch (e) {
@@ -423,7 +392,6 @@
       }
     }
 
-    // タブ切り替え
     function switchTab(tabName) {
       ['timeline', 'record', 'ranking'].forEach(t => {
         document.getElementById(`tab-${t}`).classList.add('hidden');
@@ -445,7 +413,6 @@
       if (tabName === 'ranking') loadRanking();
     }
 
-    // 練習メニュー選択トグル
     function toggleMenu(btn, menuName) {
       const idx = selectedMenus.indexOf(menuName);
       const icon = btn.querySelector('.check-icon');
@@ -462,7 +429,6 @@
       }
     }
 
-    // 練習時間選択
     function selectTime(btn, mins) {
       selectedMinutes = mins;
       document.querySelectorAll('.time-btn').forEach(b => {
@@ -473,7 +439,6 @@
       btn.classList.add('border-green-600', 'bg-green-50', 'text-green-700');
     }
 
-    // 練習記録の保存処理
     async function submitPractice() {
       if (selectedMenus.length === 0) {
         showToast("練習メニューを1つ以上選んでね！⚽");
@@ -496,18 +461,12 @@
         liftingCount: liftingVal ? parseInt(liftingVal, 10) : null,
         memo: memoVal,
         stamps: { nice: 0, fire: 0, clap: 0 },
-        createdAt: isDemoMode ? new Date() : firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       try {
-        if (isDemoMode) {
-          newRecord.id = 'demo-' + Date.now();
-          demoLogs.unshift(newRecord);
-        } else {
-          await db.collection('practice_logs').add(newRecord);
-        }
+        await db.collection('practice_logs').add(newRecord);
 
-        // フォームリセット
         selectedMenus = [];
         document.querySelectorAll('.menu-btn').forEach(b => {
           b.classList.remove('border-green-600', 'bg-green-50', 'text-green-800');
@@ -528,30 +487,24 @@
       }
     }
 
-    // タイムライン読み込み＆自分の累計時間計算
     async function loadTimeline() {
       const listEl = document.getElementById('timelineList');
       let logs = [];
 
       try {
-        if (isDemoMode) {
-          logs = demoLogs;
-        } else {
-          const snapshot = await db.collection('practice_logs')
-            .orderBy('createdAt', 'desc')
-            .limit(40)
-            .get();
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            logs.push({
-              id: doc.id,
-              ...data,
-              createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
-            });
+        const snapshot = await db.collection('practice_logs')
+          .orderBy('createdAt', 'desc')
+          .limit(40)
+          .get();
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          logs.push({
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
           });
-        }
+        });
 
-        // 自分の累計時間を計算してヘッダー更新
         const myTotal = logs
           .filter(l => l.playerName === currentUser.playerName || l.userId === currentUser.userId)
           .reduce((sum, l) => sum + (l.minutes || 0), 0);
@@ -581,14 +534,12 @@
             ? `<p class="mt-2 text-sm text-slate-600 bg-slate-50 p-2.5 rounded-xl">${escapeHtml(log.memo)}</p>` 
             : '';
 
-          // 自分の投稿なら削除ボタンを表示
           const isMyPost = (log.userId === currentUser.userId) || (log.playerName === currentUser.playerName);
           const deleteBtnHtml = isMyPost 
             ? `<button onclick="confirmDelete('${log.id}')" class="text-slate-300 hover:text-red-500 px-1.5 py-0.5 text-sm transition" title="削除">🗑️</button>` 
             : '';
 
           const stamps = log.stamps || { nice: 0, fire: 0, clap: 0 };
-          // 自分がすでに押したスタンプかどうかを判定（localStorageに保存）
           const myStamped = getMyStamped(log.id);
           const niceClass = myStamped.nice ? 'bg-green-100 border-green-500 text-green-800' : 'bg-slate-50 border-slate-200 text-slate-700';
           const fireClass = myStamped.fire ? 'bg-orange-100 border-orange-500 text-orange-800' : 'bg-slate-50 border-slate-200 text-slate-700';
@@ -596,6 +547,30 @@
 
           return `
             <div class="bg-white rounded-3xl p-4 card-shadow space-y-2.5">
+              <!-- 投稿者ヘッダー -->
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                  <img src="${log.avatar || 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=soccer'}" class="w-10 h-10 rounded-full bg-slate-100 object-cover">
+                  <div>
+                    <p class="font-extrabold text-sm text-slate-800">${escapeHtml(log.playerName || '選手')}</p>
+                    <p class="text-[11px] text-slate-400">${timeStr}</p>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="bg-green-600 text-white text-xs font-extrabold px-3 py-1 rounded-full">
+                    ⏱️ ${log.minutes}分
+                  </span>
+                  ${deleteBtnHtml}
+                </div>
+              </div>
+
+              <!-- メニュー・記録内容 -->
+              <div class="flex flex-wrap gap-1.5 pt-1">
+                ${badgesHtml}
+              </div>
+              ${liftingHtml}
+              ${memoHtml}
+
               <!-- 応援スタンプボタン（1人1回・トグル式） -->
               <div class="pt-2 border-t border-slate-100 flex items-center space-x-2">
                 <button onclick="toggleStamp('${log.id}', 'nice', this)" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
@@ -614,11 +589,12 @@
 
       } catch (e) {
         console.error("タイムライン取得エラー:", e);
+        document.getElementById('configWarning').classList.remove('hidden');
+        document.getElementById('errorDetailText').textContent = e.message;
         listEl.innerHTML = `<p class="text-center text-red-500 text-sm py-6">データの読み込みに失敗しました。</p>`;
       }
     }
 
-    // 自分のスタンプ履歴を取得・保存するヘルパー
     function getMyStamped(logId) {
       try {
         const all = JSON.parse(localStorage.getItem('soccer_my_stamps') || '{}');
@@ -638,9 +614,7 @@
       }
     }
 
-    // 応援スタンプを押す・取り消す処理（1人1回制限）
     async function toggleStamp(logId, type, btnElement) {
-      // 連打防止のため一時的に無効化
       if (btnElement.dataset.loading === 'true') return;
       btnElement.dataset.loading = 'true';
 
@@ -653,7 +627,6 @@
       const nextCount = Math.max(0, currentCount + delta);
       countSpan.textContent = nextCount;
 
-      // 見た目の切り替え
       const colorMap = {
         nice: ['bg-green-100', 'border-green-500', 'text-green-800'],
         fire: ['bg-orange-100', 'border-orange-500', 'text-orange-800'],
@@ -673,17 +646,10 @@
       saveMyStamped(logId, myStamped);
 
       try {
-        if (isDemoMode) {
-          const target = demoLogs.find(l => l.id === logId);
-          if (target) {
-            target.stamps[type] = Math.max(0, (target.stamps[type] || 0) + delta);
-          }
-        } else {
-          const docRef = db.collection('practice_logs').doc(logId);
-          await docRef.update({
-            [`stamps.${type}`]: firebase.firestore.FieldValue.increment(delta)
-          });
-        }
+        const docRef = db.collection('practice_logs').doc(logId);
+        await docRef.update({
+          [`stamps.${type}`]: firebase.firestore.FieldValue.increment(delta)
+        });
       } catch (e) {
         console.error("スタンプ更新エラー:", e);
       } finally {
@@ -691,21 +657,15 @@
       }
     }
 
-    // ランキング集計＆表示
     async function loadRanking() {
       const rankingEl = document.getElementById('rankingList');
       rankingEl.innerHTML = `<p class="text-center text-slate-400 text-sm py-6">集計中... 🏆</p>`;
 
       let logs = [];
       try {
-        if (isDemoMode) {
-          logs = demoLogs;
-        } else {
-          const snapshot = await db.collection('practice_logs').get();
-          snapshot.forEach(doc => logs.push(doc.data()));
-        }
+        const snapshot = await db.collection('practice_logs').get();
+        snapshot.forEach(doc => logs.push(doc.data()));
 
-        // 選手名ごとに練習時間を合算
         const map = {};
         logs.forEach(log => {
           const name = log.playerName || 'ななし';
@@ -761,7 +721,6 @@
       }
     }
 
-    // ユーティリティ：相対時間表示
     function formatTimeAgo(date) {
       if (!date) return '';
       const diffSec = Math.floor((new Date() - date) / 1000);
@@ -774,7 +733,6 @@
       return `${diffDay}日前`;
     }
 
-    // ユーティリティ：XSS対策エスケープ
     function escapeHtml(str) {
       if (!str) return '';
       return str.replace(/[&<>"']/g, function(m) {
