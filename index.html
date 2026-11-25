@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -588,41 +589,23 @@
             : '';
 
           const stamps = log.stamps || { nice: 0, fire: 0, clap: 0 };
+          // 自分がすでに押したスタンプかどうかを判定（localStorageに保存）
+          const myStamped = getMyStamped(log.id);
+          const niceClass = myStamped.nice ? 'bg-green-100 border-green-500 text-green-800' : 'bg-slate-50 border-slate-200 text-slate-700';
+          const fireClass = myStamped.fire ? 'bg-orange-100 border-orange-500 text-orange-800' : 'bg-slate-50 border-slate-200 text-slate-700';
+          const clapClass = myStamped.clap ? 'bg-blue-100 border-blue-500 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-700';
 
           return `
             <div class="bg-white rounded-3xl p-4 card-shadow space-y-2.5">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2.5">
-                  <img src="${log.avatar || 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=soccer'}" class="w-10 h-10 rounded-full bg-slate-100 object-cover border border-slate-200">
-                  <div>
-                    <p class="font-extrabold text-sm text-slate-800">${escapeHtml(log.playerName)}</p>
-                    <p class="text-[11px] text-slate-400">${timeStr}</p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-1.5">
-                  <div class="bg-green-600 text-white font-extrabold text-sm px-3 py-1 rounded-full shadow-sm">
-                    ⏱️ ${log.minutes}分
-                  </div>
-                  ${deleteBtnHtml}
-                </div>
-              </div>
-
-              <div class="flex flex-wrap gap-1.5 pt-1">
-                ${badgesHtml}
-              </div>
-
-              ${liftingHtml}
-              ${memoHtml}
-
-              <!-- 応援スタンプボタン -->
+              <!-- 応援スタンプボタン（1人1回・トグル式） -->
               <div class="pt-2 border-t border-slate-100 flex items-center space-x-2">
-                <button onclick="addStamp('${log.id}', 'nice', this)" class="flex-1 bg-slate-50 hover:bg-green-50 active:scale-95 border border-slate-200 rounded-xl py-1.5 text-xs font-bold text-slate-700 transition">
+                <button onclick="toggleStamp('${log.id}', 'nice', this)" class="flex-1 hover:bg-green-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${niceClass}">
                   ⚽ ナイス! <span class="stamp-count text-green-700 font-extrabold">${stamps.nice || 0}</span>
                 </button>
-                <button onclick="addStamp('${log.id}', 'fire', this)" class="flex-1 bg-slate-50 hover:bg-orange-50 active:scale-95 border border-slate-200 rounded-xl py-1.5 text-xs font-bold text-slate-700 transition">
+                <button onclick="toggleStamp('${log.id}', 'fire', this)" class="flex-1 hover:bg-orange-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${fireClass}">
                   🔥 すごい! <span class="stamp-count text-orange-600 font-extrabold">${stamps.fire || 0}</span>
                 </button>
-                <button onclick="addStamp('${log.id}', 'clap', this)" class="flex-1 bg-slate-50 hover:bg-blue-50 active:scale-95 border border-slate-200 rounded-xl py-1.5 text-xs font-bold text-slate-700 transition">
+                <button onclick="toggleStamp('${log.id}', 'clap', this)" class="flex-1 hover:bg-blue-50 active:scale-95 border rounded-xl py-1.5 text-xs font-bold transition ${clapClass}">
                   👏 おつかれ! <span class="stamp-count text-blue-600 font-extrabold">${stamps.clap || 0}</span>
                 </button>
               </div>
@@ -636,25 +619,76 @@
       }
     }
 
-    // 応援スタンプを押す処理
-    async function addStamp(logId, type, btnElement) {
+    // 自分のスタンプ履歴を取得・保存するヘルパー
+    function getMyStamped(logId) {
+      try {
+        const all = JSON.parse(localStorage.getItem('soccer_my_stamps') || '{}');
+        return all[logId] || { nice: false, fire: false, clap: false };
+      } catch (e) {
+        return { nice: false, fire: false, clap: false };
+      }
+    }
+
+    function saveMyStamped(logId, stampedObj) {
+      try {
+        const all = JSON.parse(localStorage.getItem('soccer_my_stamps') || '{}');
+        all[logId] = stampedObj;
+        localStorage.setItem('soccer_my_stamps', JSON.stringify(all));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 応援スタンプを押す・取り消す処理（1人1回制限）
+    async function toggleStamp(logId, type, btnElement) {
+      // 連打防止のため一時的に無効化
+      if (btnElement.dataset.loading === 'true') return;
+      btnElement.dataset.loading = 'true';
+
+      const myStamped = getMyStamped(logId);
+      const isAlreadyStamped = !!myStamped[type];
+      const delta = isAlreadyStamped ? -1 : 1;
+
       const countSpan = btnElement.querySelector('.stamp-count');
       const currentCount = parseInt(countSpan.textContent, 10) || 0;
-      countSpan.textContent = currentCount + 1;
-      btnElement.classList.add('bg-green-100', 'border-green-400');
+      const nextCount = Math.max(0, currentCount + delta);
+      countSpan.textContent = nextCount;
+
+      // 見た目の切り替え
+      const colorMap = {
+        nice: ['bg-green-100', 'border-green-500', 'text-green-800'],
+        fire: ['bg-orange-100', 'border-orange-500', 'text-orange-800'],
+        clap: ['bg-blue-100', 'border-blue-500', 'text-blue-800']
+      };
+      const activeClasses = colorMap[type];
+
+      if (!isAlreadyStamped) {
+        btnElement.classList.remove('bg-slate-50', 'border-slate-200', 'text-slate-700');
+        btnElement.classList.add(...activeClasses);
+        myStamped[type] = true;
+      } else {
+        btnElement.classList.remove(...activeClasses);
+        btnElement.classList.add('bg-slate-50', 'border-slate-200', 'text-slate-700');
+        myStamped[type] = false;
+      }
+      saveMyStamped(logId, myStamped);
 
       try {
         if (isDemoMode) {
           const target = demoLogs.find(l => l.id === logId);
-          if (target) target.stamps[type] = (target.stamps[type] || 0) + 1;
+          if (target) {
+            target.stamps[type] = Math.max(0, (target.stamps[type] || 0) + delta);
+          }
         } else {
           const docRef = db.collection('practice_logs').doc(logId);
           await docRef.update({
-            [`stamps.${type}`]: firebase.firestore.FieldValue.increment(1)
+            [`stamps.${type}`]: firebase.firestore.FieldValue.increment(delta)
           });
         }
       } catch (e) {
         console.error("スタンプ更新エラー:", e);
+      } finally {
+        btnElement.dataset.loading = 'false';
       }
     }
 
