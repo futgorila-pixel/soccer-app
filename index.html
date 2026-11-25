@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -35,13 +36,13 @@
 <body class="text-slate-800 pb-24">
 
   <!-- ==========================================
-       ⚙️ 設定エリア（ここだけご自身の情報に書き換えます！）
+       ⚙️ 設定エリア（ご自身の本番キー設定済み！）
        ========================================== -->
-   <script>
-    // 1. LINE Developers で取得した LIFF ID を貼り付けてください
+  <script>
+    // 1. LINE Developers で取得した LIFF ID
     const MY_LIFF_ID = "2012781434-uVaVDF3P";
 
-    // 2. Firebase で取得した firebaseConfig の中身を貼り付けてください
+    // 2. Firebase で取得した firebaseConfig の中身
     const firebaseConfig = {
       apiKey: "AIzaSyCcFTjeCn13api7dx7kz7nkz2ghTYU3x_s",
       authDomain: "football-training-9521b.firebaseapp.com",
@@ -87,11 +88,11 @@
   <!-- メインコンテンツエリア -->
   <main class="max-w-md mx-auto px-4 mt-5">
     
-    <!-- 設定未完了時のアラート（管理者向けガイド） -->
+    <!-- 設定未完了時のアラート（エラー発生時のみ表示） -->
     <div id="configWarning" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded-r-xl shadow-sm">
-      <p class="text-sm font-bold text-amber-800">⚠️ 初期設定（デモモードで動作中）</p>
-      <p class="text-xs text-amber-700 mt-1">
-        現在お試しモードで動いています。チームでデータを保存するには、コード内の <code>MY_LIFF_ID</code> と <code>firebaseConfig</code> を書き換えてください。
+      <p class="text-sm font-bold text-amber-800">⚠️ データベース接続エラー（デモモードで動作中）</p>
+      <p id="errorDetailText" class="text-xs text-amber-700 mt-1">
+        Firebaseへの接続に失敗しました。Firestoreが作成されているか確認してください。
       </p>
     </div>
 
@@ -227,8 +228,8 @@
   <div id="nameModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-extrabold text-lg text-slate-800">⚽ 選手の名前を設定しよう</h3>
-      <p class="text-xs text-slate-500">おうちの方のスマホを使う場合は、お子さまの名前と学年を入力してください。（例：たろう 3年）</p>
-      <input type="text" id="playerNameInput" placeholder="例：たろう（3年）" class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 font-bold focus:border-green-500 focus:outline-none">
+      <p class="text-xs text-slate-500">おうちの方のスマホを使う場合は、お子さまの名前と学年を入力してください。（例：ゆうと 3年）</p>
+      <input type="text" id="playerNameInput" placeholder="例：ゆうと（3年）" class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 font-bold focus:border-green-500 focus:outline-none">
       <div class="flex space-x-2 pt-2">
         <button onclick="closeNameModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">キャンセル</button>
         <button onclick="savePlayerName()" class="flex-1 pitch-gradient text-white font-bold py-3 rounded-xl">保存する</button>
@@ -236,8 +237,21 @@
     </div>
   </div>
 
+  <!-- 記録削除確認モーダル（confirmの代わり） -->
+  <div id="deleteModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-xl text-center">
+      <div class="text-3xl">🗑️</div>
+      <h3 class="font-extrabold text-lg text-slate-800">この記録を消しますか？</h3>
+      <p class="text-xs text-slate-500">一度消すと元には戻せません。</p>
+      <div class="flex space-x-2 pt-2">
+        <button onclick="closeDeleteModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">やめる</button>
+        <button onclick="executeDelete()" class="flex-1 bg-red-500 text-white font-bold py-3 rounded-xl">消す</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 通知トースト（alertの代わり） -->
-  <div id="toast" class="hidden fixed top-24 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-sm font-bold px-5 py-3 rounded-full shadow-lg z-50 transition-opacity">
+  <div id="toast" class="hidden fixed top-24 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-sm font-bold px-5 py-3 rounded-full shadow-lg z-50 transition-opacity whitespace-nowrap">
     メッセージ
   </div>
 
@@ -251,9 +265,18 @@
     // ==========================================
     let db = null;
     let isDemoMode = false;
+    let deleteTargetId = null;
+
+    // ブラウザ固有のユーザーIDを生成・保持（LINE外でも自分の投稿を識別するため）
+    let localBrowserId = localStorage.getItem('soccer_browser_uid');
+    if (!localBrowserId) {
+      localBrowserId = 'user-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+      localStorage.setItem('soccer_browser_uid', localBrowserId);
+    }
+
     let currentUser = {
-      userId: 'demo-user-' + Math.floor(Math.random() * 1000),
-      displayName: 'サッカー少年',
+      userId: localBrowserId,
+      displayName: 'サッカー選手',
       pictureUrl: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=soccer',
       playerName: localStorage.getItem('soccer_player_name') || ''
     };
@@ -261,32 +284,7 @@
     // フォーム選択状態
     let selectedMenus = [];
     let selectedMinutes = 30;
-
-    // デモ用の初期データ（Firebase未設定時でも画面を確認できるようにするため）
-    let demoLogs = [
-      {
-        id: 'demo1',
-        playerName: 'はるき（4年）',
-        avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=haruki',
-        menus: ['リフティング', 'ドリブル'],
-        minutes: 45,
-        liftingCount: 38,
-        memo: 'リフティング自己ベスト更新できた！',
-        createdAt: new Date(Date.now() - 1000 * 60 * 30),
-        stamps: { nice: 3, fire: 2, clap: 1 }
-      },
-      {
-        id: 'demo2',
-        playerName: 'そうた（3年）',
-        avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=souta',
-        menus: ['パス・トラップ', 'シュート'],
-        minutes: 30,
-        liftingCount: null,
-        memo: 'お父さんと壁当てパス練習をした！',
-        createdAt: new Date(Date.now() - 1000 * 60 * 180),
-        stamps: { nice: 5, fire: 1, clap: 4 }
-      }
-    ];
+    let demoLogs = [];
 
     // 初期化処理
     window.onload = async function() {
@@ -298,6 +296,8 @@
         } catch (e) {
           console.error("Firebase初期化エラー:", e);
           isDemoMode = true;
+          document.getElementById('configWarning').classList.remove('hidden');
+          document.getElementById('errorDetailText').textContent = e.message;
         }
       } else {
         isDemoMode = true;
@@ -356,13 +356,11 @@
 
     // レベル計算とヘッダー反映
     function updateLevelDisplay(totalMinutes) {
-      // 60分ごとに1レベルアップ
       const level = Math.floor(totalMinutes / 60) + 1;
       const remainder = totalMinutes % 60;
       const progressPercent = Math.max(8, Math.round((remainder / 60) * 100));
       const nextMinutes = 60 - remainder;
 
-      // レベルに応じた称号
       let title = "サッカー少年";
       if (level >= 30) title = "レジェンド";
       else if (level >= 20) title = "チームの要";
@@ -396,6 +394,34 @@
       closeNameModal();
       showToast(`「${val}」で登録しました！`);
       loadTimeline();
+    }
+
+    // 削除確認モーダル操作
+    function confirmDelete(logId) {
+      deleteTargetId = logId;
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+    function closeDeleteModal() {
+      deleteTargetId = null;
+      document.getElementById('deleteModal').classList.add('hidden');
+    }
+    async function executeDelete() {
+      if (!deleteTargetId) return;
+      const targetId = deleteTargetId;
+      closeDeleteModal();
+
+      try {
+        if (isDemoMode) {
+          demoLogs = demoLogs.filter(l => l.id !== targetId);
+        } else {
+          await db.collection('practice_logs').doc(targetId).delete();
+        }
+        showToast("🗑️ 記録を削除しました");
+        await loadTimeline();
+      } catch (e) {
+        console.error("削除エラー:", e);
+        showToast("削除に失敗しました");
+      }
     }
 
     // タブ切り替え
@@ -437,7 +463,7 @@
       }
     }
 
-     // 練習時間選択
+    // 練習時間選択
     function selectTime(btn, mins) {
       selectedMinutes = mins;
       document.querySelectorAll('.time-btn').forEach(b => {
@@ -556,6 +582,12 @@
             ? `<p class="mt-2 text-sm text-slate-600 bg-slate-50 p-2.5 rounded-xl">${escapeHtml(log.memo)}</p>` 
             : '';
 
+          // 自分の投稿なら削除ボタンを表示
+          const isMyPost = (log.userId === currentUser.userId) || (log.playerName === currentUser.playerName);
+          const deleteBtnHtml = isMyPost 
+            ? `<button onclick="confirmDelete('${log.id}')" class="text-slate-300 hover:text-red-500 px-1.5 py-0.5 text-sm transition" title="削除">🗑️</button>` 
+            : '';
+
           const stamps = log.stamps || { nice: 0, fire: 0, clap: 0 };
 
           return `
@@ -568,8 +600,11 @@
                     <p class="text-[11px] text-slate-400">${timeStr}</p>
                   </div>
                 </div>
-                <div class="bg-green-600 text-white font-extrabold text-sm px-3 py-1 rounded-full shadow-sm">
-                  ⏱️ ${log.minutes}分
+                <div class="flex items-center space-x-1.5">
+                  <div class="bg-green-600 text-white font-extrabold text-sm px-3 py-1 rounded-full shadow-sm">
+                    ⏱️ ${log.minutes}分
+                  </div>
+                  ${deleteBtnHtml}
                 </div>
               </div>
 
