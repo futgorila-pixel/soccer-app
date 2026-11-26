@@ -311,9 +311,9 @@
     <section id="tab-ranking" class="hidden fade-in space-y-4">
       <div class="bg-white rounded-3xl p-5 card-shadow">
         <h2 class="font-extrabold text-lg text-center text-slate-800 mb-1">
-          🏆 累計練習時間ランキング
+          🏆 自主練時間ランキング
         </h2>
-        <p class="text-xs text-center text-slate-400 mb-4">自主練もチーム練習も合わせてレベルアップ！</p>
+        <p class="text-xs text-center text-slate-400 mb-4">毎日の自主練を積み重ねてレベルアップしよう！<br><span class="text-[10px]">（※チーム練習の時間はランキングに含まれません）</span></p>
         
         <div id="rankingList" class="space-y-2.5">
           <!-- ランキングアイテム -->
@@ -923,8 +923,9 @@
           });
         });
 
+        // ヘッダーのレベルと累計時間も「自主練習」のみを集計
         const myTotal = cachedPracticeLogs
-          .filter(l => l.userId === currentUser.userId || l.playerName === currentUser.playerName)
+          .filter(l => (l.userId === currentUser.userId || l.playerName === currentUser.playerName) && l.practiceType !== 'team')
           .reduce((sum, l) => sum + (l.minutes || 0), 0);
         updateLevelDisplay(myTotal);
 
@@ -1731,6 +1732,9 @@
 
         const map = {};
         logs.forEach(log => {
+          // チーム練習はランキング集計から除外（自主練習のみ集計）
+          if (log.practiceType === 'team') return;
+
           const name = log.playerName || 'ななし';
           if (!map[name]) {
             map[name] = {
@@ -1747,7 +1751,7 @@
         const sorted = Object.values(map).sort((a, b) => b.totalMinutes - a.totalMinutes);
 
         if (sorted.length === 0) {
-          rankingEl.innerHTML = `<p class="text-center text-slate-400 text-sm py-6">まだデータがありません</p>`;
+          rankingEl.innerHTML = `<p class="text-center text-slate-400 text-sm py-6">まだ自主練データがありません</p>`;
           return;
         }
 
@@ -1767,7 +1771,7 @@
                 <img src="${sanitizeImageUrl(player.avatar)}" class="w-10 h-10 rounded-full bg-white object-cover">
                 <div>
                   <p class="font-extrabold text-sm text-slate-800">${escapeHtml(player.playerName)}</p>
-                  <p class="text-[11px] text-slate-500">Lv.${lv} ・ 練習 ${player.count}回</p>
+                  <p class="text-[11px] text-slate-500">Lv.${lv} ・ 自主練 ${player.count}回</p>
                 </div>
               </div>
               <div class="text-right">
