@@ -1672,6 +1672,15 @@
       }
     }
 
+    function getMyStamped(storageKey) {
+      try {
+        const all = JSON.parse(localStorage.getItem('soccer_my_stamps') || '{}');
+        return all[storageKey] || {};
+      } catch (e) {
+        return {};
+      }
+    }
+
     function saveMyStamped(storageKey, stampedObj) {
       try {
         const all = JSON.parse(localStorage.getItem('soccer_my_stamps') || '{}');
