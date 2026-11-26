@@ -483,6 +483,11 @@
       <input type="hidden" id="editScheduleId" value="">
 
       <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">予定の名称（タイトル・必須）</label>
+        <input type="text" id="schedTitle" placeholder="例：〇〇カップ / △△FC練習試合 / 通常練習" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:border-green-500 focus:outline-none">
+      </div>
+
+      <div>
         <label class="block text-xs font-bold text-slate-600 mb-1">種別</label>
         <select id="schedType" class="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:border-green-500 focus:outline-none">
           <option value="練習">⚽ 練習</option>
@@ -1457,6 +1462,7 @@
         if (!target) return;
         document.getElementById('scheduleModalTitle').textContent = "✏️ 予定を編集";
         document.getElementById('editScheduleId').value = target.id;
+        document.getElementById('schedTitle').value = target.title || '';
         document.getElementById('schedType').value = target.type || '練習';
         document.getElementById('schedDate').value = target.date || '';
         document.getElementById('schedTime').value = target.time || '';
@@ -1465,6 +1471,7 @@
       } else {
         document.getElementById('scheduleModalTitle').textContent = "📅 新しい予定を追加";
         document.getElementById('editScheduleId').value = '';
+        document.getElementById('schedTitle').value = '';
         document.getElementById('schedType').value = '練習';
         document.getElementById('schedDate').value = '';
         document.getElementById('schedTime').value = '';
@@ -1481,12 +1488,17 @@
     async function saveSchedule() {
       if (!isAdmin) return;
       const editId = document.getElementById('editScheduleId').value;
+      const title = document.getElementById('schedTitle').value.trim();
       const type = document.getElementById('schedType').value;
       const date = document.getElementById('schedDate').value;
       const time = document.getElementById('schedTime').value.trim();
       const place = document.getElementById('schedPlace').value.trim();
       const note = document.getElementById('schedNote').value.trim();
 
+      if (!title) {
+        showToast("予定の名称を入力してください！");
+        return;
+      }
       if (!date) {
         showToast("日付を選んでください！");
         return;
@@ -1499,12 +1511,12 @@
       try {
         if (editId) {
           await db.collection('schedules').doc(editId).update({
-            type, date, time, place, note
+            title, type, date, time, place, note
           });
           showToast("✅ 予定を更新しました！");
         } else {
           await db.collection('schedules').add({
-            type, date, time, place, note,
+            title, type, date, time, place, note,
             attendance: {},
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
@@ -1597,10 +1609,13 @@
 
         return `
           <div class="bg-white rounded-3xl p-4 card-shadow space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2">
-                <span class="${typeBadgeColor} text-xs font-extrabold px-2.5 py-1 rounded-full">${escapeHtml(sched.type || '練習')}</span>
-                <span class="font-extrabold text-base text-slate-800">${formatJapaneseDate(sched.date)}</span>
+            <div class="flex items-start justify-between">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="${typeBadgeColor} text-xs font-extrabold px-2.5 py-0.5 rounded-full">${escapeHtml(sched.type || '練習')}</span>
+                  <span class="font-extrabold text-sm text-slate-600">${formatJapaneseDate(sched.date)}</span>
+                </div>
+                ${sched.title ? `<h3 class="font-extrabold text-base text-slate-800 pl-0.5">${escapeHtml(sched.title)}</h3>` : ''}
               </div>
               ${adminControls}
             </div>
