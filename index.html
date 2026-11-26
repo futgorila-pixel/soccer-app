@@ -1612,15 +1612,18 @@
             </div>
 
             <div>
-              <p class="text-[11px] font-bold text-slate-500 mb-1.5">あなたの出欠（タップで回答・変更）：</p>
+              <div class="flex items-center justify-between mb-1.5">
+                <p class="text-[11px] font-bold text-slate-500">あなたの出欠（タップで回答・変更）：</p>
+                ${myStatus ? `<button type="button" onclick="cancelAttendance('${sched.id}')" class="text-[11px] text-slate-500 hover:text-red-600 underline font-bold">回答を取り消す</button>` : ''}
+              </div>
               <div class="grid grid-cols-3 gap-2">
-                <button onclick="submitAttendance('${sched.id}', 'yes')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${yesBtnClass}">
+                <button type="button" onclick="submitAttendance('${sched.id}', 'yes')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${yesBtnClass}">
                   ⭕ 参加 (${yesList.length})
                 </button>
-                <button onclick="submitAttendance('${sched.id}', 'maybe')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${maybeBtnClass}">
+                <button type="button" onclick="submitAttendance('${sched.id}', 'maybe')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${maybeBtnClass}">
                   🔺 未定 (${maybeList.length})
                 </button>
-                <button onclick="submitAttendance('${sched.id}', 'no')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${noBtnClass}">
+                <button type="button" onclick="submitAttendance('${sched.id}', 'no')" class="border-2 rounded-xl py-2 text-xs font-extrabold transition active:scale-95 ${noBtnClass}">
                   ❌ 欠席 (${noList.length})
                 </button>
               </div>
@@ -1655,15 +1658,17 @@
       }
     }
 
-    // ==========================================
-    // 応援スタンプ・ランキング・ユーティリティ
-    // ==========================================
-    function getMyStamped(storageKey) {
+    async function cancelAttendance(scheduleId) {
       try {
-        const all = JSON.parse(localStorage.getItem('soccer_my_stamps') || '{}');
-        return all[storageKey] || { nice: false, fire: false, clap: false };
+        const docRef = db.collection('schedules').doc(scheduleId);
+        await docRef.update({
+          [`attendance.${currentUser.userId}`]: firebase.firestore.FieldValue.delete()
+        });
+        showToast("出欠の回答を取り消しました");
+        await loadSchedules();
       } catch (e) {
-        return { nice: false, fire: false, clap: false };
+        console.error("出欠取消エラー:", e);
+        showToast("出欠の取り消しに失敗しました");
       }
     }
 
