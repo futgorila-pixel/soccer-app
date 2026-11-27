@@ -334,7 +334,7 @@
         <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-500">
           <div class="flex items-center space-x-2">
             <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-green-500 mr-1"></span>練習</span>
-            <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-orange-500 mr-1"></span>試合</span>
+            <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1"></span>練習試合</span>
             <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-1"></span>大会</span>
           </div>
           <button type="button" id="showAllMonthSchedulesBtn" onclick="clearSelectedDate()" class="text-green-700 font-extrabold underline">
@@ -1851,7 +1851,7 @@
         // 予定ドット（最大3つまで表示）
         const dotsHtml = daySchedules.slice(0, 3).map(s => {
           let dotColor = 'bg-green-500';
-          if (s.type === '練習試合') dotColor = 'bg-orange-500';
+          if (s.type === '練習試合') dotColor = 'bg-blue-500';
           else if (s.type === '公式戦・大会') dotColor = 'bg-red-500';
           else if (s.type === 'イベント・その他') dotColor = 'bg-purple-500';
           if (isSelected) dotColor = 'bg-yellow-300';
@@ -1935,7 +1935,7 @@
         });
 
         let typeBadgeColor = "bg-green-100 text-green-800";
-        if (sched.type === '練習試合') typeBadgeColor = "bg-orange-100 text-orange-800";
+        if (sched.type === '練習試合') typeBadgeColor = "bg-blue-100 text-blue-800";
         if (sched.type === '公式戦・大会') typeBadgeColor = "bg-red-100 text-red-800";
         if (sched.type === 'イベント・その他') typeBadgeColor = "bg-purple-100 text-purple-800";
 
