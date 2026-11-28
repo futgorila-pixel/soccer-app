@@ -1269,6 +1269,7 @@
       const scoreUs = gameData?.scoreUs !== undefined && gameData?.scoreUs !== null ? gameData.scoreUs : '';
       const scoreThem = gameData?.scoreThem !== undefined && gameData?.scoreThem !== null ? gameData.scoreThem : '';
       const myGoals = gameData?.myGoals !== undefined && gameData?.myGoals !== null ? gameData.myGoals : '';
+      const scorers = gameData?.scorers || '';
 
       const rowDiv = document.createElement('div');
       rowDiv.className = "game-row bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2 relative";
@@ -1294,6 +1295,9 @@
             <span class="block text-[10px] font-bold text-orange-600 mb-0.5">自分ゴール</span>
             <input type="number" min="0" max="99" placeholder="0" class="game-my-goals w-full border border-orange-200 rounded-xl py-1.5 text-center text-base font-extrabold bg-white focus:border-orange-500 focus:outline-none" value="${myGoals}">
           </div>
+        </div>
+        <div>
+          <input type="text" class="game-scorers w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:border-green-500 focus:outline-none" placeholder="⚽ 得点者（任意・例：ゆうと2、はるき1）" value="${escapeHtml(scorers)}">
         </div>
       `;
       container.appendChild(rowDiv);
@@ -1395,14 +1399,16 @@
         const sUsRaw = row.querySelector('.game-score-us').value;
         const sThemRaw = row.querySelector('.game-score-them').value;
         const mGoalsRaw = row.querySelector('.game-my-goals').value;
+        const scorersVal = row.querySelector('.game-scorers').value.trim();
 
         // 1試合目、または何か入力されている試合のみ保存
-        if (idx === 0 || vsName !== '' || sUsRaw !== '' || sThemRaw !== '' || mGoalsRaw !== '') {
+        if (idx === 0 || vsName !== '' || sUsRaw !== '' || sThemRaw !== '' || mGoalsRaw !== '' || scorersVal !== '') {
           games.push({
             opponent: vsName,
             scoreUs: sUsRaw !== '' ? parseInt(sUsRaw, 10) : 0,
             scoreThem: sThemRaw !== '' ? parseInt(sThemRaw, 10) : 0,
-            myGoals: mGoalsRaw !== '' ? parseInt(mGoalsRaw, 10) : 0
+            myGoals: mGoalsRaw !== '' ? parseInt(mGoalsRaw, 10) : 0,
+            scorers: scorersVal
           });
         }
       });
@@ -1498,6 +1504,7 @@
           const us = parseInt(g.scoreUs, 10) || 0;
           const them = parseInt(g.scoreThem, 10) || 0;
           const myGoals = parseInt(g.myGoals, 10) || 0;
+          const scorersText = g.scorers ? escapeHtml(g.scorers) : '';
 
           let resultBadge = `<span class="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">△ 分</span>`;
           if (us > them) resultBadge = `<span class="bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">🏆 WIN</span>`;
@@ -1507,18 +1514,21 @@
           const gameNumPrefix = gamesList.length > 1 ? `<span class="text-[10px] font-extrabold text-slate-400 mr-1">#${idx + 1}</span>` : '';
 
           return `
-            <div class="flex items-center justify-between py-1.5 ${idx > 0 ? 'border-t border-slate-200/70' : ''}">
-              <div class="flex items-center space-x-1.5 min-w-0 pr-2">
-                ${gameNumPrefix}
-                <span class="font-bold text-xs text-slate-700 truncate">${vsLabel}</span>
+            <div class="py-1.5 ${idx > 0 ? 'border-t border-slate-200/70' : ''}">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-1.5 min-w-0 pr-2">
+                  ${gameNumPrefix}
+                  <span class="font-bold text-xs text-slate-700 truncate">${vsLabel}</span>
+                </div>
+                <div class="flex items-center space-x-2 shrink-0">
+                  ${myGoals > 0 ? `<span class="bg-orange-100 text-orange-800 text-[10px] font-extrabold px-2 py-0.5 rounded-lg">⚽${myGoals}点</span>` : ''}
+                  <span class="font-extrabold text-base text-slate-800">
+                    <span class="text-green-700">${us}</span><span class="text-slate-400 text-xs mx-0.5">-</span><span>${them}</span>
+                  </span>
+                  ${resultBadge}
+                </div>
               </div>
-              <div class="flex items-center space-x-2 shrink-0">
-                ${myGoals > 0 ? `<span class="bg-orange-100 text-orange-800 text-[10px] font-extrabold px-2 py-0.5 rounded-lg">⚽${myGoals}点</span>` : ''}
-                <span class="font-extrabold text-base text-slate-800">
-                  <span class="text-green-700">${us}</span><span class="text-slate-400 text-xs mx-0.5">-</span><span>${them}</span>
-                </span>
-                ${resultBadge}
-              </div>
+              ${scorersText ? `<p class="text-[11px] text-slate-600 mt-1 pl-1">⚽ 得点者：${scorersText}</p>` : ''}
             </div>
           `;
         }).join('');
